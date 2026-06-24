@@ -1,4 +1,4 @@
-=== Getting Started
+=== TAM Day 2026 Showroom Guide
 
 This template is designed to be used as a base for your showroom lab guides.
 
@@ -128,3 +128,105 @@ extensions:
 . Produces
 +
 image::dev-mode.png[]
+
+=== UI Customization Guide
+
+This section describes how to customize the TAM Day 2026 showroom branding.
+
+==== 1. Extract the UI Bundle
+
+Create an editable working directory from the committed bundle:
+
+[source,sh]
+----
+mkdir ui-bundle
+cd ui-bundle
+unzip ../ui-bundle-tam-day-2026.zip
+cd ..
+----
+
+==== 2. Update Files
+
+Modify the header title in:
+----
+./ui-bundle/partials/header-content.hbs
+----
+Change the default title from `One` to `TAM Day 2026`.
+
+Modify the footer text in:
+
+----
+./ui-bundle/partials/footer-content.hbs
+----
+
+Change the default text from `Demo Platform` to `TW TAM x Marketing`.
+
+==== 3. Rebuild UI Bundle
+
+From the repository root:
+
+[source,sh]
+----
+cd ui-bundle
+zip -r -X ../ui-bundle-tam-day-2026.zip . -x "*.DS_Store"
+cd ..
+----
+
+==== 4. Update Antora Configuration
+
+Edit:
+
+----
+./default-site.yml
+----
+
+Update the UI bundle reference:
+
+[source,yaml]
+----
+ui:
+  bundle:
+    url: ./ui-bundle-tam-day-2026.zip
+    snapshot: true
+----
+
+==== 5. Rebuild the Site
+
+Clean previous build artifacts:
+
+[source,sh]
+----
+rm -rf www
+rm -rf .cache/antora
+----
+
+Generate the site:
+
+[source,sh]
+----
+npx antora default-site.yml
+----
+
+==== 6. Preview the Site
+
+Build and start the local preview server:
+
+[source,sh]
+----
+npm run build
+npm run preview
+----
+
+Open:
+
+----
+http://localhost:8080
+----
+
+=== Verification
+
+Verify the following changes:
+
+. Header displays `TAM Day 2026`
+. Footer displays `TW TAM x Marketing`
+. Site loads successfully at `http://localhost:8080`

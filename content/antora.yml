@@ -1,5 +1,5 @@
 name: modules
-title: Private Models-as-a-Service - A Practical Introduction with Red Hat AI
+title: Agentic AI for Enterprise Remediation
 version: main
 nav:
   - modules/ROOT/nav.adoc
@@ -10,7 +10,7 @@ asciidoc:
     page-pagination: true
     experimental:
     numbered:
-    lab_name: "Private Models-as-a-Service - A Practical Introduction with Red Hat AI"
+    lab_name: "Agentic AI for Enterprise Remediation"
     guid: my-guid
     ssh_user: lab-user
     ssh_password: lab-user

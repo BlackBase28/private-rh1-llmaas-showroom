@@ -1,6 +1,6 @@
 ---
 site:
-  title: Private Models-as-a-Service - A Practical Introduction with Red Hat AI
+  title: Agentic AI for Enterprise Remediation
   url: https://github.com/RHTW-TAM-Day-2026/private-rh1-llmaas-showroom
   start_page: modules::index.adoc
 
@@ -11,7 +11,7 @@ content:
 
 ui:
   bundle:
-    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/rh-one-2025/ui-bundle.zip
+    url: ./ui-bundle-tam-day-2026.zip
     snapshot: true
   supplemental_files:
     - path: ./content/supplemental-ui
