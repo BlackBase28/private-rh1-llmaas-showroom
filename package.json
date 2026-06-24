@@ -1,0 +1,17 @@
+{
+  "name": "private-rh1-llmaas-showroom",
+  "version": "0.3.1-tamday.1",
+  "private": true,
+  "description": "TAM Day 2026 showroom lab guide",
+  "scripts": {
+    "clean": "rm -rf www .cache/antora",
+    "build": "antora generate default-site.yml --stacktrace",
+    "preview": "http-server www -p 8080 -c-1",
+    "serve": "npm run build && npm run preview"
+  },
+  "devDependencies": {
+    "@antora/cli": "3.1.15",
+    "@antora/site-generator": "3.1.15",
+    "http-server": "14.1.1"
+  }
+}

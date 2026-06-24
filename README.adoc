@@ -13,6 +13,21 @@ Features:
 . Dev Mode extension that displays the asciidoc attributes you have to work with
 . Content is generated using Antora, a static site generator for creating documentation sites from AsciiDoc documents.
 
+=== Local Preview with Node.js
+
+Install the pinned development dependencies and build the site:
+
+[source,sh]
+----
+npm install
+npm run build
+npm run preview
+----
+
+Open http://localhost:8080 in your browser.
+
+After editing the content, stop the preview server, run `npm run build`, and start `npm run preview` again.
+
 == Getting Started
 
 === Using Containers (Recommended)

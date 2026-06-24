@@ -6,3 +6,4 @@
 * xref:module-06-analytics.adoc#model-analytics[Module 6: Usage Analytics and Reporting]
 * xref:module-07-closing.adoc#closing-summary[Closing Summary]
 * xref:module-08-resources.adoc#resources[Resources]
+* xref:module-09-tam-day-remediation.adoc#tam-day-remediation[Module 9: Broken Authorization Remediation]

@@ -1,0 +1,241 @@
+:imagesdir: ../assets/images
+
+[#tam-day-remediation]
+= Module 9: Broken Authorization Remediation with RHOAI, Cline, and AAP
+
+In this lab, you will investigate and remediate a security incident in your own OpenShift workload.
+
+The application is healthy, but authorization is broken: an ordinary user can access `/admin`.
+
+== Lab Objective
+
+You will complete an enterprise-style AI-assisted remediation flow:
+
+* Investigate the incident with Red Hat OpenShift AI and MCP tools
+* Use Cline in OpenShift Dev Spaces to fix the application code
+* Review the generated code diff before deployment
+* Trigger an approved Ansible Automation Platform remediation job
+* Validate that ordinary users are denied and administrators are allowed
+
+== Your Environment
+
+Each learner has an isolated target workload:
+
+[listing,subs=attributes+]
+----
+Namespace: tam-{user}
+Application: portal-{user}
+Route: https://portal-{user}.{openshift_cluster_ingress_domain}
+----
+
+Test credentials:
+
+[cols="1,1,1"]
+|===
+|Role |Username |Password
+
+|Ordinary user
+|user
+|user123
+
+|Administrator
+|admin
+|admin123
+|===
+
+== Confirm the Broken State
+
+Open your portal route:
+
+[source,console,subs=attributes+]
+----
+https://portal-{user}.{openshift_cluster_ingress_domain}
+----
+
+Confirm that the health endpoint is working:
+
+[source,console,subs=attributes+]
+----
+curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
+----
+
+Log in as the ordinary user:
+
+[source,console,subs=attributes+]
+----
+curl -k -c cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"user123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+----
+
+Access the administrator page:
+
+[source,console,subs=attributes+]
+----
+curl -k -b cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+The initial result is:
+
+[listing]
+----
+HTTP/1.1 200 OK
+----
+
+This is the intentional security defect. The application is alive, but its authorization policy is broken.
+
+== Investigate with the RHOAI Playground
+
+Open Red Hat OpenShift AI and go to the Gen AI Playground.
+
+Enable these MCP servers:
+
+* Kubernetes MCP Server
+* Rocket.Chat MCP Server
+* AAP MCP Server
+
+Use the following prompt:
+
+[listing,subs=attributes+]
+----
+We are investigating a security incident for my lab user {user}.
+The portal application is in namespace tam-{user} and the route is
+https://portal-{user}.{openshift_cluster_ingress_domain}.
+
+Please inspect the portal pod logs, deployment metadata, and recent validation output.
+Explain why an ordinary user can access /admin and propose a minimal secure code fix.
+Do not trigger any deployment yet.
+----
+
+The expected root-cause analysis is:
+
+* `/admin` checks whether the user is logged in.
+* `/admin` does not enforce the `admin` role.
+* Ordinary users should receive HTTP status `403`.
+
+== Fix the Application with Cline
+
+Open your OpenShift Dev Spaces workspace and the portal application repository.
+
+Use Cline with the RHOAI-hosted model endpoint. Ask Cline:
+
+[listing]
+----
+This Flask portal has a broken authorization bug.
+The /admin route currently allows any authenticated user.
+
+Please make the smallest safe code change so:
+- unauthenticated users receive 401
+- ordinary users receive 403
+- admin users receive 200
+- /healthz remains 200
+
+Also update or add tests that prove these behaviors.
+Show me the diff before I commit.
+----
+
+Review the proposed code changes before accepting them.
+
+Run the local tests:
+
+[source,console]
+----
+pytest -q
+----
+
+Commit your fix:
+
+[source,console]
+----
+git status
+git add app.py tests/test_authorization.py
+git commit -m "Fix admin authorization check"
+git push
+----
+
+== Trigger AAP Remediation
+
+Before deployment, confirm that the code diff is acceptable.
+
+Launch the approved AAP job template:
+
+[listing]
+----
+tam-day-portal-remediate
+----
+
+Provide the following survey variables:
+
+[source,yaml,subs=attributes+]
+----
+username: "{user}"
+namespace: "tam-{user}"
+app_name: "portal-{user}"
+route_url: "https://portal-{user}.{openshift_cluster_ingress_domain}"
+image: "quay.io/YOUR_ORG/tam-day-portal:fixed"
+notify_channel: "#rh-tam-alerts"
+----
+
+The AAP job will:
+
+* Patch your portal Deployment
+* Wait for the rollout to complete
+* Run security validation
+* Report the result
+
+== Validate the Fixed State
+
+Ordinary user access to `/admin` must now fail:
+
+[source,console,subs=attributes+]
+----
+curl -k -c cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"user123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+
+curl -k -b cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+Expected result:
+
+[listing]
+----
+HTTP/1.1 403 FORBIDDEN
+----
+
+Administrator access must still work:
+
+[source,console,subs=attributes+]
+----
+curl -k -c admin-cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+
+curl -k -b admin-cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+Expected result:
+
+[listing]
+----
+HTTP/1.1 200 OK
+----
+
+== Governance Discussion
+
+This lab intentionally keeps control boundaries clear:
+
+* RHOAI and MCP assist with investigation.
+* Cline proposes and applies source changes in the developer workspace.
+* Git records the code change.
+* AAP performs deployment and validation.
+* Human approval is required before remediation.
+* AAP job history and chat notifications provide audit context.
+
+The same pattern can be extended to RHEL VM targets by replacing the per-user OpenShift workload with AAP inventory, credentials, and host-level deployment tasks.

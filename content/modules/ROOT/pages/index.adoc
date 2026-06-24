@@ -15,6 +15,13 @@ In this hands-on session, you will rotate between key personas critical to deliv
 
 At the end, you will walk away with practical experience across the lifecycle of model deployment.
 
+== TAM Day Extension
+
+The TAM Day extension adds an enterprise remediation scenario to the base workshop.
+After completing the core modules, you will investigate a broken authorization policy, use RHOAI and MCP tools to determine the root cause, fix the application with Cline, and use Ansible Automation Platform to deploy and validate the remediation.
+
+xref:module-09-tam-day-remediation.adoc#tam-day-remediation[Start the TAM Day broken authorization remediation lab].
+
 == Workshop Agenda
 
 === **Module 1:** Introduction to your environment and Models-as-a-Service Infrastructure
@@ -35,4 +42,3 @@ Take on the role of a technical decision maker or platform stakeholder. Explore 
 == Workshop Environment
 
 For this workshop, you are in a shared OpenShift cluster environment with your own assigned user access. Each participant is sharing one model deployment.
-
