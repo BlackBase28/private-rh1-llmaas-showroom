@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+
 [#model-analytics]
 = Usage Analytics and Reporting
 

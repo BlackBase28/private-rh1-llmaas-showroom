@@ -1,0 +1,161 @@
+:imagesdir: ../assets/images
+
+[#analysis-logs]
+= Analyze the Edge Application Logs
+
+== Configure RHEL MCP in Cline
+
+When Cline runs in OpenShift Dev Spaces, configure it with your personal
+cluster-internal RHEL MCP Service URL.
+
+. Open Cline and select *MCP*.
+. Enter these values:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Server Name
+|`rhel-mcp`
+
+|Server URL
+|`http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp`
+
+|Transport Type
+|`streamableHttp`
+|===
++
+image::cline-mcp-server-settings.png[Cline MCP Server settings,width=80%]
+
+. Select *Configure*.
++
+image::cline-mcp-configure-button.png[Cline MCP Configure button,width=80%]
+
+. Confirm the generated configuration:
++
+[source,json,role=execute,subs=attributes+]
+----
+{
+  "mcpServers": {
+    "rhel-mcp": {
+      "url": "http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp",
+      "type": "streamableHttp",
+      "disabled": false,
+      "autoApprove": [
+        "read_log_file"
+      ]
+    }
+  }
+}
+----
++
+image::cline-mcp-configuration.png[Cline MCP configuration file,width=80%]
+
+If Cline was already running, reload the Dev Spaces window or restart the Cline
+session after saving the MCP configuration.
+
+== Analyze the Three Application Logs
+
+Use the exact MCP tool name and argument names. `read_log_file` requires
+`log_path`, not `path`.
+
+Paste this prompt into Cline:
+
+[listing,role=execute,subs=attributes+]
+....
+Use the MCP tool rhel-mcp__read_log_file to read these files from
+{edge_host}:
+
+1. /var/log/kernel-cve-radar/access.log
+2. /var/log/kernel-cve-radar/error.log
+3. /var/log/kernel-cve-radar/auth-events.jsonl
+
+For every tool call, use:
+{
+  "host": "{edge_host}",
+  "log_path": "<one of the paths above>",
+  "lines": 200
+}
+
+Do not use read_file.
+Do not use local file reading.
+Do not guess another host or path.
+
+Correlate the timestamps, user, source IP, request IDs, role changes, denied
+requests, successful administrative access, CVE findings, and data export.
+Return a concise incident timeline, severity, impact, and recommended actions.
+....
+
+image::cline-rhl-mcp-prompt.png[Cline RHEL MCP prompt,width=80%]
+
+The response should identify the important sequence across all three logs,
+including the unauthorized privilege change and the subsequent sensitive
+report export.
+
+image::cline-rhel-mcp-response.png[Cline RHEL MCP response,width=80%]
+
+== Test the Log Allowlist
+
+Paste this prompt into Cline:
+
+[listing,role=execute,subs=attributes+]
+....
+Call exactly this MCP tool and arguments:
+
+Tool: rhel-mcp__read_log_file
+Arguments:
+{
+  "host": "{edge_host}",
+  "log_path": "/var/log/messages",
+  "lines": 20
+}
+
+Do not use another tool or path.
+....
+
+The request must fail because `/var/log/messages` is not one of the three
+allowed application logs.
+
+// TODO: Add a screenshot showing Cline receiving the allowlist failure when it calls rhel-mcp__read_log_file for /var/log/messages.
+// Suggested filename: cline-rhel-mcp-allowlist-failure.png
+
+== Troubleshooting
+
+=== Cline Uses `path` Instead of `log_path`
+
+The correct tool and arguments are:
+
+[source,json,role=execute,subs=attributes+]
+----
+{
+  "host": "{edge_host}",
+  "log_path": "/var/log/kernel-cve-radar/error.log",
+  "lines": 200
+}
+----
+
+=== Cline Uses Local File Reading
+
+Name the tool explicitly:
+
+[listing,role=execute]
+....
+rhel-mcp__read_log_file
+....
+
+Do not refer only to the RHOAI display name `RHEL-MCP-Server`; Cline uses the
+server key configured in its MCP settings.
+
+=== The MCP Connection Works but SSH Closes
+
+From the Showroom terminal, restart your personal MCP deployment:
+
+[source,console,role=execute,subs=attributes+]
+----
+oc rollout restart deployment/rhel-mcp \
+  -n showroom-pgvrq-{user}
+
+oc rollout status deployment/rhel-mcp \
+  -n showroom-pgvrq-{user} \
+  --timeout=5m
+----

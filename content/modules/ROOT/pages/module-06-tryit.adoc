@@ -1,0 +1,184 @@
+:imagesdir: ../assets/images
+
+[#code]
+= Try It Yourself
+
+Now that Cline is connected to the shared model, you will use it to complete a
+small manufacturing application. The goal is not to generate a large project.
+Instead, you will practice a controlled AI-assisted development loop:
+
+. Inspect the starter code.
+. Give Cline a focused task.
+. Review the proposed change.
+. Run the program.
+. Ask for one small correction only if needed.
+
+The exercise uses a single Python file and the Python standard library. This
+keeps the task reliable for the shared `qwen3-4b-instruct` model.
+
+== The Scenario
+
+A production line records temperature, vibration, and defect count for each
+manufactured item. Your application must read the sample CSV data and classify
+each item as `PASS` or `REJECT`.
+
+An item passes only when all of these rules are true:
+
+* Temperature is between `18.0` and `25.0` degrees Celsius, inclusive.
+* Vibration is no more than `4.0` millimeters per second.
+* Defect count is no more than `2`.
+
+The application must also print the total number of items, passed items,
+rejected items, and the rejection rate.
+
+== Open the Starter Project
+
+The `code-for-fun` repository is already cloned into your Dev Spaces workspace
+as `/projects/exercises`.
+
+In the Explorer, open:
+
+[source,text]
+----
+manufacturing-quality-checker/
+├── starter/
+│   ├── quality_checker.py
+│   └── sample_readings.csv
+└── solution/
+    └── quality_checker.py
+----
+
+Open `starter/quality_checker.py` and read the existing code before asking
+Cline to make changes. Notice that most of the application is already
+implemented. There are only two `TODO` sections.
+
+IMPORTANT: Do not open or copy `solution/quality_checker.py` yet. The
+`starter` directory is your working area. The `solution` directory is an
+instructor reference for comparison after you attempt the exercise.
+
+== Complete the TODOs with Cline
+
+Open the Cline panel and paste the following prompt:
+
+[source,text,role=execute]
+----
+Open starter/quality_checker.py and starter/sample_readings.csv. Complete only
+the code marked TODO 1 and TODO 2 in starter/quality_checker.py.
+
+Requirements:
+- Modify only starter/quality_checker.py.
+- Do not change existing code outside the two TODO sections.
+- Use only the Python standard library.
+- Do not add dependencies or create new files.
+- A reading passes when temperature is 18.0-25.0 C inclusive, vibration is
+  at most 4.0 mm/s, and defect_count is at most 2.
+- For rejected readings, list every failed rule as a short reason.
+- The summary must show total, passed, rejected, and rejection rate.
+- Keep the program simple and under 120 lines.
+- After editing, summarize the changes in no more than five bullets.
+----
+
+When Cline proposes an action:
+
+. Confirm that it is editing only `starter/quality_checker.py`.
+. Review the changes around `evaluate_reading()` and `print_summary()`.
+. Approve the edit if it follows the requirements.
+. Do not approve package installation or unrelated files.
+
+// TODO: Add a screenshot showing Cline proposing changes only in starter/quality_checker.py with the diff visible for review.
+// Suggested filename: cline-quality-checker-diff.png
+
+[TIP]
+====
+Small, specific prompts usually work better than broad requests such as
+“make this application enterprise-grade.” They also use fewer shared model
+tokens and make the proposed code easier to review.
+====
+
+== Run the Quality Checker
+
+Open a terminal in Dev Spaces and run:
+
+[source,console,role=execute]
+----
+cd /projects/exercises/manufacturing-quality-checker
+python3 starter/quality_checker.py
+----
+
+Your output should end with this summary:
+
+[source,text]
+----
+Total: 8
+Passed: 3
+Rejected: 5
+Rejection rate: 62.5%
+----
+
+Also verify these boundary cases:
+
+* `MFG-1007` must pass because its values are inside all limits.
+* `MFG-1006` must show all three failed quality rules.
+* A rejected item must not be counted as passed.
+
+// TODO: Add a screenshot showing the terminal output with Total: 8, Passed: 3, Rejected: 5, and Rejection rate: 62.5%.
+// Suggested filename: quality-checker-success-output.png
+
+== Debug with a Focused Follow-up
+
+If the command fails or the totals are incorrect, do not ask Cline to rewrite
+the entire program. Copy the error or describe the single failed check:
+
+[source,text,role=execute]
+----
+The program output does not match the expected summary.
+Inspect starter/quality_checker.py, identify the smallest correction, and edit
+only the TODO function that is incorrect. Do not change other files, create
+files, or install packages.
+----
+
+Run the program again after reviewing and approving the correction.
+
+== Optional: Ask for an Explanation
+
+If you finish early, ask Cline one read-only question:
+
+[source,text,role=execute]
+----
+Explain evaluate_reading() in five short bullets. Do not edit any files.
+----
+
+This demonstrates that an AI development agent can help with both code changes
+and code understanding.
+
+== Stuck? Compare with the Reference
+
+The instructor reference is available at:
+
+[source,text]
+----
+/projects/exercises/manufacturing-quality-checker/solution/quality_checker.py
+----
+
+Run it without replacing your own work:
+
+[source,console,role=execute]
+----
+python3 solution/quality_checker.py
+----
+
+Compare the behavior first. The implementation does not need to be identical
+if your output and quality rules are correct.
+
+== What You Practiced
+
+You have now used Cline to:
+
+* Work within an existing codebase.
+* Apply a small, constrained code change.
+* Review an AI-generated edit before accepting it.
+* Test the result from the terminal.
+* Debug with a focused follow-up prompt.
+
+In the next module, you will use the same controlled workflow with RHEL MCP to
+analyze application logs from an Edge environment.

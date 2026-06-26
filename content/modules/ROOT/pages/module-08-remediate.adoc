@@ -1,7 +1,7 @@
 :imagesdir: ../assets/images
 
-[#tam-day-remediation]
-= Module 9: Broken Authorization Remediation with RHOAI, Cline, and AAP
+[#remediation-and-redeploy]
+= Challenge / Bonus: Remediate and Redeploy
 
 In this lab, you will investigate and remediate a security incident in your own OpenShift workload.
 
@@ -47,21 +47,21 @@ Test credentials:
 
 Open your portal route:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://portal-{user}.{openshift_cluster_ingress_domain}
 ----
 
 Confirm that the health endpoint is working:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
 ----
 
 Log in as the ordinary user:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 curl -k -c cookies.txt \
   -H "Content-Type: application/json" \
@@ -71,7 +71,7 @@ curl -k -c cookies.txt \
 
 Access the administrator page:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 curl -k -b cookies.txt -i \
   https://portal-{user}.{openshift_cluster_ingress_domain}/admin
@@ -86,6 +86,9 @@ HTTP/1.1 200 OK
 
 This is the intentional security defect. The application is alive, but its authorization policy is broken.
 
+// TODO: Add a screenshot showing the ordinary user /admin request returning HTTP/1.1 200 OK before remediation.
+// Suggested filename: portal-broken-admin-access.png
+
 == Investigate with the RHOAI Playground
 
 Open Red Hat OpenShift AI and go to the Gen AI Playground.
@@ -98,7 +101,7 @@ Enable these MCP servers:
 
 Use the following prompt:
 
-[listing,subs=attributes+]
+[listing,role=execute,subs=attributes+]
 ----
 We are investigating a security incident for my lab user {user}.
 The portal application is in namespace tam-{user} and the route is
@@ -115,13 +118,16 @@ The expected root-cause analysis is:
 * `/admin` does not enforce the `admin` role.
 * Ordinary users should receive HTTP status `403`.
 
+// TODO: Add a screenshot showing the RHOAI Playground root-cause analysis explaining the missing admin role check.
+// Suggested filename: playground-portal-root-cause.png
+
 == Fix the Application with Cline
 
 Open your OpenShift Dev Spaces workspace and the portal application repository.
 
 Use Cline with the RHOAI-hosted model endpoint. Ask Cline:
 
-[listing]
+[listing,role=execute]
 ----
 This Flask portal has a broken authorization bug.
 The /admin route currently allows any authenticated user.
@@ -138,16 +144,22 @@ Show me the diff before I commit.
 
 Review the proposed code changes before accepting them.
 
+// TODO: Add a screenshot showing Cline's proposed authorization diff and test changes before accepting them.
+// Suggested filename: cline-portal-auth-diff.png
+
 Run the local tests:
 
-[source,console]
+[source,console,role=execute]
 ----
 pytest -q
 ----
 
+// TODO: Add a screenshot showing pytest passing for the portal authorization tests.
+// Suggested filename: portal-pytest-success.png
+
 Commit your fix:
 
-[source,console]
+[source,console,role=execute]
 ----
 git status
 git add app.py tests/test_authorization.py
@@ -161,14 +173,14 @@ Before deployment, confirm that the code diff is acceptable.
 
 Launch the approved AAP job template:
 
-[listing]
+[listing,role=execute]
 ----
 tam-day-portal-remediate
 ----
 
 Provide the following survey variables:
 
-[source,yaml,subs=attributes+]
+[source,yaml,role=execute,subs=attributes+]
 ----
 username: "{user}"
 namespace: "tam-{user}"
@@ -185,11 +197,17 @@ The AAP job will:
 * Run security validation
 * Report the result
 
+// TODO: Add a screenshot showing the AAP job template survey filled with username, namespace, app_name, route_url, image, and notify_channel.
+// Suggested filename: aap-portal-remediation-survey.png
+
+// TODO: Add a screenshot showing the AAP remediation job completed successfully with validation output.
+// Suggested filename: aap-portal-remediation-success.png
+
 == Validate the Fixed State
 
 Ordinary user access to `/admin` must now fail:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 curl -k -c cookies.txt \
   -H "Content-Type: application/json" \
@@ -207,9 +225,12 @@ Expected result:
 HTTP/1.1 403 FORBIDDEN
 ----
 
+// TODO: Add a screenshot showing ordinary user access to /admin returning HTTP/1.1 403 FORBIDDEN after remediation.
+// Suggested filename: portal-fixed-user-forbidden.png
+
 Administrator access must still work:
 
-[source,console,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 curl -k -c admin-cookies.txt \
   -H "Content-Type: application/json" \
@@ -226,6 +247,9 @@ Expected result:
 ----
 HTTP/1.1 200 OK
 ----
+
+// TODO: Add a screenshot showing administrator access to /admin returning HTTP/1.1 200 OK after remediation.
+// Suggested filename: portal-fixed-admin-ok.png
 
 == Governance Discussion
 

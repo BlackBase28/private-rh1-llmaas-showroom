@@ -1,10 +1,44 @@
 :imagesdir: ../assets/images
+
 [#agentic-ai]
 = System Administration with Agentic AI 
 
-In the last module, you stepped into the developer role building applications using private LLM endpoints. Now, you'll become a **site reliability engineer (SRE) or DevOps practitioner** focused on observability, diagnostics, and operational scale. 
+Now, you'll become a **site reliability engineer (SRE) or DevOps practitioner** focused on observability, diagnostics, and operational scale. 
 
 But you won't go at it alone, you'll work with agentic AI tooling to navigate your OpenShift environment in real time - just like a modern SRE team building insight-driven automation.
+
+
+== Introduction to your environment
+
+Our first step is to get accustomed to our environment and its components. 
+
+Our home base will be our OpenShift cluster web console:
+
+// NOTE: If you are accessing these instructions through our Red Hat Demo Platform workshop, the information below will render properly with unique values. If you are accessing the instructions separately for your own cluster, from the GitHub repository, you will instead see placeholder values.
+
+**Console URL**: https://console-openshift-console.{openshift_cluster_ingress_domain}/[https://console-openshift-console.{openshift_cluster_ingress_domain}/,window=_blank].
+
+**Login Credentials**:
+
+. **User**: {user}
+. **Password**: {password}
+
+From here, we will navigate to and between the following environments throughout our workshop:
+
+* **Cluster Argo CD**
+** We may use this app to view our GitOps application deployments. This may be useful if you need to check the health of any of our apps.
+* **Grafana**
+** A dashboard interface that will show us model usage metrics.
+* **Red Hat OpenShift AI**
+** Where we will view and manage our model deployments and other MLOps/LLMOps tasks and agentic resources.
+* **Red Hat OpenShift Dev Spaces**
+** Where we will go into our developer persona and leverage our model as a service setup for coding tasks.
+
+You may find and go to these applications via our navigation button in the web console:
+
+image::apps-menu.png[]
+
+Now that you know how to get around, your adventure begins!
 
 == Why Agentic AI for Admins?
 

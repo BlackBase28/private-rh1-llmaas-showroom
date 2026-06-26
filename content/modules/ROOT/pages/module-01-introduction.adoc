@@ -1,7 +1,7 @@
 :imagesdir: ../assets/images
 
 [#maas_introduction]
-= Introduction: The Hidden Cost of Infrastructure-as-a-Service
+= From Infrastructure Complexity to Models-as-a-Service
 
 When infrastructure is self-service with no clear guardrails in place, problems can quickly emerge:
 
@@ -40,7 +40,3 @@ To address these challenges as a platform engineer, you will design a centralize
 
 [.bordershadow]
 image::maas.png[width="50%"]
-
-== Module 1 Goals: Step into the Developer role.
-
-In this first module, you will take your first step into the role of a developer. You will access your OpenShift web console and get access to your model credentials that have been set up through a Models-as-a-Service interface. 

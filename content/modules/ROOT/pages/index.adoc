@@ -1,44 +1,56 @@
 :imagesdir: ../assets/images
-= Private Model as a Service - A Practical Introduction with Red Hat AI
+
+= Agentic AI for Enterprise Edge Remediation
 
 == Welcome to the Workshop
+This is more than an introduction to AI tools. It is a hands-on enterprise remediation journey across platform operations, application development, and Edge deployment.
 
-This isn't a simple tutorial, this is the beginning of an adventure into the command center of an AI-powered enterprise!
+Enterprise applications may run across distributed RHEL environments, including manufacturing facilities, financial service locations, retail stores, telecommunications sites, and remote technology infrastructure. These environments require secure, reliable, and auditable processes for troubleshooting and software updates.
 
-In this hands-on session, you will rotate between key personas critical to delivering modern, AI-infused, production-level enterprise services:
+In this hands-on workshop, you will rotate between two key personas:
 
-* As a **developer**, you will access model credentials through a Models-as-a-Service interface and integrate AI code assistants into your development workflow. Then, you will connect real applications to private LLM endpoints, use code assistant technology to build applications, and leverage AI to enhance your coding productivity.
+* As a **site reliability engineer (SRE) or DevOps practitioner**, you will prepare Models-as-a-Service, the RHOAI Playground, MCP servers, Grafana, and controlled access to remote RHEL or Edge environments.
 
-* As a **DevOps Practitioner or Site Reliability Engineer**, you will explore the capabilities of agentic AI to monitor your OpenShift cluster resources and interact with collaboration tools.
+* As a **Developer**, you will use a Cline-powered AI Development Agent in OpenShift Dev Spaces to analyze remote application logs, generate remediations, review code changes, and complete a controlled redeployment.
 
-* As a **technical decision maker or platform stakeholder**, you will monitor and analyze model usage across the cluster to understand cost, usage patterns, and business impact. 
-
-At the end, you will walk away with practical experience across the lifecycle of model deployment.
-
-== TAM Day Extension
-
-The TAM Day extension adds an enterprise remediation scenario to the base workshop.
-After completing the core modules, you will investigate a broken authorization policy, use RHOAI and MCP tools to determine the root cause, fix the application with Cline, and use Ansible Automation Platform to deploy and validate the remediation.
-
-xref:module-09-tam-day-remediation.adoc#tam-day-remediation[Start the TAM Day broken authorization remediation lab].
+At the end of the workshop, you will understand how RHOAI, MCP, GitHub, Argo CD, Ansible Automation Platform, and RHEL image mode can work together to deliver a controlled, verifiable, and auditable enterprise remediation workflow.
 
 == Workshop Agenda
 
-=== **Module 1:** Introduction to your environment and Models-as-a-Service Infrastructure
-As a developer, get acquainted with your OpenShift cluster environment and navigate to the OpenShift AI dashboard to view your model deployment and retrieve your endpoint and API token.
+=== Part 1: SRE or DevOps practitioner
 
-=== **Module 2:** AI-Assisted Development
-Set up OpenShift Dev Spaces, install an AI-powered code assistant, and connect it to your private MaaS model endpoint to enhance your coding workflow.
+==== **Module 1:** From Infrastructure Complexity to Models-as-a-Service
+Explore the resource allocation, duplicated model deployment, and cost governance challenges associated with traditional GPU infrastructure. Learn how Models-as-a-Service provides centralized model management, secure API access, shared resources, and a developer-friendly experience.
 
-=== **Module 3:** Game Time
-Build a simple game using AI assistance. Explore, experiment, and build confidence with AI-assisted coding through a fun, low-pressure project.
+==== **Module 2:** System Administration with Agentic AI
+Use the RHOAI Playground, Llama Stack, and MCP servers to inspect OpenShift resources, interact with collaboration services, and experience how Agentic AI can assist with system administration.
 
-=== **Module 4:** System Administration with Agentic AI
-With the mindset of a site reliability engineer or DevOps practitioner, use Model Context Protocol (MCP) servers and Llama Stack to interact with your OpenShift cluster and Slack workspace using natural language.
+==== **Module 3:** Usage Analytics and Reporting
+Use Grafana dashboards to observe model consumption, platform activity, and resource utilization. Understand the operational status, cost, and governance requirements of enterprise AI services.
 
-=== **Module 5:** Usage Analytics and Reporting
-Take on the role of a technical decision maker or platform stakeholder. Explore Grafana dashboards to monitor model usage, track costs, and understand the business impact of your AI services.
+==== **Module 4:** Install and Validate RHEL MCP
+Establish a secure connection between RHOAI and distributed RHEL or Edge environments. Deploy and register the RHEL MCP Server so authorized AI clients can access approved remote system information and application data.
+
+=== Part 2: Developer
+
+==== **Module 5:** Build an AI-Assisted Development Environment
+Open an OpenShift Dev Spaces workspace, install Cline, and connect a Cline-powered AI Development Agent to the RHOAI Models-as-a-Service endpoint.
+
+==== **Module 6:** Try It Yourself
+Build a simple application with AI assistance. Practice generating, reviewing, testing, and improving code while becoming familiar with the AI Development Agent workflow.
+
+==== **Module 7:** Analyze Edge Application Logs
+Use the AI Development Agent and RHEL MCP to securely retrieve application logs from distributed Edge environments. Analyze errors and operational risks, identify the root cause, and propose an appropriate remediation for the affected Edge application.
+
+==== **Module 8 — Challenge / Bonus:** Remediate and Redeploy
+Apply everything you have learned in an optional advanced challenge. Use the AI Development Agent to generate code or manifest changes, review and test the proposed remediation, and commit the approved changes to GitHub. Complete the workflow by using Argo CD, Ansible Automation Platform, and RHEL image mode to deploy and validate the update on the target RHEL or Edge environment.
+
+[IMPORTANT]
+====
+Module 8 is an optional challenge and bonus exercise. Complete it if time permits or if you would like to explore the full end-to-end enterprise remediation workflow.
+====
 
 == Workshop Environment
+This workshop runs on a shared OpenShift cluster. Each participant receives an individual user account and an OpenShift Dev Spaces development environment.
 
-For this workshop, you are in a shared OpenShift cluster environment with your own assigned user access. Each participant is sharing one model deployment.
+The foundation model and selected platform services are shared across participants. Development activities, RHEL targets, and remediation workflows are isolated and controlled according to the Lab environment.

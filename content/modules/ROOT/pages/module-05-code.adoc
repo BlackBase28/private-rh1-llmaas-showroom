@@ -1,0 +1,220 @@
+:imagesdir: ../assets/images
+
+[#code-asst]
+= Build an AI-Assisted Development Environment
+
+Starting in this module, you will step into the role of a developer. You will access your OpenShift web console and retrieve the model credentials that have been set up through a Models-as-a-Service interface.
+
+== View model deployment
+
+OpenShift AI provides a web-based dashboard interface to deploy and manage models with ease, at scale and in conjunction with other critical AI assets like MCP servers or evaluation tooling.
+
+Let's get connected.
+
+**Open the OpenShift AI Dashboard**
+
+Click the navigation button and select **Red Hat OpenShift AI** from the drop-down menu.
+
+image::nav-rhoai.png[]
+
+If prompted, login again with your user credentials to the OpenShift AI dashboard.
+
+Once authenticated you will see the following home page:
+
+image::rhoai-dashboard.png[]
+
+Now, go to the `Gen AI Studio` section of the dashboard and select `AI asset endpoints`.
+
+image::nav-genaistudio.png[]
+
+In the AI asset endpoints page, change the project from `grafana` to `Workspace userx` with `x` equal to your assigned user number.
+
+image::genaistudio-changeproject.png[]
+
+Now you may view your available asset endpoints.
+
+You will not see any available models under the `Models` tab. Why? Because you do not have a model deployed in this project (project = namespace).
+
+We do, however, have a model deployed in a separate namespace managed by our cluster admin. This admin has set up a `Models as a Service` architecture for our organization with a central model they have deployed and now manage that is available for use by remote teams across the organization. 
+
+We will not be able to manage the model deployment with our simple user privileges, but we can access its endpoint information via the `Models as a service` tab. 
+
+image::maas-tab.png[]
+
+Select the tab. You will see your admin has deployed one model for you to use: `qwen3-4b-instruct`
+
+image::maas-model.png[]
+
+// Test model in playground
+
+We need the endpoint for the next section. Select `View` under the `External endpoint` column:
+
+image::view-endpoint.png[]
+
+Copy the MaaS route into a separate note file on your computer for safekeeping.
+
+image::copy-route.png[]
+
+Now, click `Generate API token`.
+
+image::generate-token.png[]
+
+Copy this value along with your route endpoint.
+
+image::copy-token.png[]
+
+Now that you have your model endpoint and API key, you can proceed to your work as an AI developer. Your organization leverages OpenShift Dev Spaces so development teams can build and collaborate inside the same OpenShift cluster. You will use this workspace with the MaaS endpoint to complete a controlled AI-assisted coding exercise.
+
+== The impact of AI code assistants
+
+You're not just going to write code - you're going to collaborate with an **AI-powered teammate**.
+
+Modern code assistants can:
+
+* **Understand Full Project Context**: Assistants like Cline, GitHub Copilot, and Cursor can read across files and directories, understanding how your code fits together.
+
+* **Edit code with Natural Language**: You can describe a change—like "add error handling here" or "convert this to async"—and AI-powered assistants can apply that change intelligently.
+
+* **Proactively Suggest Improvements**: They catch bugs, highlight inefficiencies, and recommend best-practice patterns.
+
+* **Automate Tedious Tasks**: From generating unit tests and docstrings to scaffolding boilerplate or renaming variables across a project—they take care of the grunt work so you can focus on logic and design.
+
+These assistants don’t just write code - with the right guardrails and knowledge in place, they can understand your project and help you build better software faster. And the best part? Most of them work seamlessly inside popular IDE's like Visual Studio Code, so you don’t need to switch tools to get started.
+
+Let's get set up.
+
+== Step 1: Setting up a cloud integrated developer environment (IDE) with OpenShift Dev Spaces
+
+As a developer, your environment should be fast, consistent, and ready to go for your work. That is what OpenShift Dev Spaces delivers: instant access to pre-configured, containerized workspaces — all running securely on your OpenShift cluster.
+
+You could also leverage an exposed model API endpoint in your local environment as a developer, if the model is exposed properly. However, your company has not exposed the model outside of the confines of the cluster, so you are required to work within the environment and not locally.
+
+NOTE: Even though the model route information you copied from the OpenShift AI dashboard interface showed as an **External endpoint** route, there is no external route exposed in this cluster. However, the current MaaS implementation expects external route exposure so this naming is hardcoded into the dashboard. 
+
+=== Access OpenShift Dev Spaces
+
+* Navigate to the OpenShift Dev Spaces application.
+
+image::nav-devspaces.png[]
+
+When prompted for your login credentials, repeat the same user login from previous steps.
+
+Once authenticated, you will see the OpenShift Dev Spaces central dashboard. We have prepared a workspace for you to access. This is a VSCode IDE workspace with a prepared repository already cloned in and necessary dependencies.
+
+When fully loaded, as indicated by a green dot by the workspace name (this could take a moment), click `Open`.
+
+image::open-workspace.png[]
+
+After a moment, you'll see the VSCode interface running in your browser. If prompted, click "Trust" when asked about the authors. We're friendly, I promise! 
+
+image::trust-vscode.png[]
+
+Inside your workspace, you'll find the aforementioned cloned GitHub repository. This is where you will build and refine with some AI assistance. The only thing we need to configure now is our code extension.
+
+Before we dive into the code, let's meet **Cline**.
+
+== Step 2: Add Cline, Your Coding Teammate
+
+**Cline** is an open-source AI coding agent that integrates into VS Code. It provides an interactive chat interface where you can describe a development task in natural language. With your approval, Cline can inspect files, propose and apply code changes, and run terminal commands. You can ask Cline to perform actions like:
+
+**“Add logging to this function”**
+
+**“Generate a unit test for this file”**
+
+**“Refactor this into smaller components”**
+
+**“Explain what this code does”**
+
+Cline works directly in your editor with awareness of your codebase and project context. It shows proposed actions and changes so that you can review and approve them as you work.
+
+What makes Cline particularly useful in this workshop is its support for OpenAI-compatible model endpoints. This allows you to connect the agent to the private model provided through Models as a Service (MaaS).
+
+NOTE: Cline is the AI-powered coding agent used in this workshop. Similar workflows are possible with other coding assistants that support custom model endpoints.
+
+=== Install Cline
+
+Select the bottom navigation item on the left-hand side to open up the extensions marketplace.
+
+image::nav-extensions.png[]
+
+In the search bar, search for **Cline**. Select the extension published by **Cline** and click **Install**.
+
+// TODO: Add a screenshot showing the Cline extension in the marketplace and the Install button.
+// Suggested filename: install-cline.png
+
+When prompted, trust the publisher and install the extension.
+
+You've now installed Cline. Next, let's connect it to your private model.
+
+== Step 3: Connect Cline to Your MaaS Model
+
+Navigate to the **Cline sidebar icon** in the left-hand navigation panel.
+
+// TODO: Add a screenshot showing the Cline icon in the VS Code activity bar.
+// Suggested filename: nav-cline.png
+
+NOTE: If the Cline panel is too narrow, expand it by dragging its border.
+
+We will do two things in this module:
+
+. Connect to our MaaS model
+. Use the model to help complete, review, and test a small manufacturing quality checker before moving into Edge log analysis.
+
+To connect Cline to the MaaS model, you must provide the endpoint URL, API key, and model ID from the MaaS application.
+
+NOTE: If needed, go back to the OpenShift AI dashboard to the AI asset endpoints section to retrieve the credentials.
+
+=== Enter MaaS endpoint details
+
+In the Cline panel, click the settings icon (gear) to open the provider settings.
+
+// TODO: Add a screenshot showing the settings icon in the Cline panel.
+// Suggested filename: cline-open-settings.png
+
+For **API Provider**, select **OpenAI Compatible**.
+
+// TODO: Add a screenshot showing OpenAI Compatible selected as the API Provider.
+// Suggested filename: cline-openai-compatible.png
+
+Enter the following values:
+
+* **Base URL**: Enter your MaaS route and append `/v1`.
+* **API Key**: Enter the API token generated from the MaaS interface.
+* **Model ID**: Enter `qwen3-4b-instruct`.
+
+For example:
+
+* **Base URL**: `https://maas.apps.example.com/llm/qwen3-4b-instruct/v1`
+* **API Key**: `your-actual-api-key-here`
+* **Model ID**: `qwen3-4b-instruct`
+
+IMPORTANT: Use the route copied from your own MaaS interface. Ensure that the Base URL ends in `/v1`, and do not share your API key.
+
+// TODO: Add a screenshot showing all three completed fields. Mask most of the API key.
+// Suggested filename: cline-maas-provider-settings.png
+
+Click **Verify** to confirm that Cline can connect to the model.
+
+// TODO: Add a screenshot showing successful provider verification.
+// Suggested filename: cline-provider-verified.png
+
+Reference the provider configuration documentation here: https://docs.cline.bot/provider-config/openai-compatible[Cline OpenAI-Compatible Provider Documentation]
+
+When the model is properly configured, return to the Cline chat panel and confirm that `qwen3-4b-instruct` is the selected model.
+
+Go ahead and send a short test message to confirm that the model responds.
+
+// TODO: Add a screenshot showing the selected model and a successful test response in Cline.
+// Suggested filename: cline-test-response.png
+
+NOTE: If the Dev Spaces workspace is recreated or the Cline settings are reset, repeat the provider configuration with your MaaS endpoint and a valid API token.
+
+== You're Ready to Code with AI
+
+You've now:
+
+* Set up a cloud IDE
+* Installed Cline and configured it to connect to your private Qwen model
+* Set up an AI assistant that can refactor, edit and explain your code!
+
+Next, you will use Cline to complete a small manufacturing quality checker with a controlled prompt-review-test workflow.
