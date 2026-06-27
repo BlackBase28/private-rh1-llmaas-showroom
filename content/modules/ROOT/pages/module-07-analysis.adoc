@@ -118,8 +118,7 @@ Do not use another tool or path.
 The request must fail because `/var/log/messages` is not one of the three
 allowed application logs.
 
-// TODO: Add a screenshot showing Cline receiving the allowlist failure when it calls rhel-mcp__read_log_file for /var/log/messages.
-// Suggested filename: cline-rhel-mcp-allowlist-failure.png
+image::cline-rhel-mcp-allowlist-failure.png[Cline RHEL MCP allowlist failure,width=80%]
 
 == Troubleshooting
 
