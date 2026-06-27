@@ -82,11 +82,20 @@ When Cline proposes an action:
 
 . Confirm that it is editing only `starter/quality_checker.py`.
 . Review the changes around `evaluate_reading()` and `print_summary()`.
-. Approve the edit if it follows the requirements.
+. Click *Save* to accept the proposed file edit if it follows the requirements.
 . Do not approve package installation or unrelated files.
 
-// TODO: Add a screenshot showing Cline proposing changes only in starter/quality_checker.py with the diff visible for review.
-// Suggested filename: cline-quality-checker-diff.png
+The *Save* button in Cline accepts the proposed change and writes it into the
+starter file. If Cline updates the two TODO sections in separate steps, review
+each proposed edit and click *Save* for each one.
+
+image::cline-quality-checker-diff.png[Cline proposing changes to starter/quality_checker.py with the Save button visible,width=90%]
+
+After both TODO sections are complete, Cline should show that all requested
+tasks have been completed. Review the final diff one more time before moving
+on to the terminal test.
+
+image::cline-quality-checker-complete.png[Cline showing all tasks completed and the final TODO changes,width=90%]
 
 [TIP]
 ====
@@ -97,7 +106,18 @@ tokens and make the proposed code easier to review.
 
 == Run the Quality Checker
 
-Open a terminal in Dev Spaces and run:
+Open a terminal in Dev Spaces:
+
+. From the top menu, click *Terminal*.
+. Click *New Terminal*.
+. Wait for the terminal prompt to appear at the bottom of the editor.
+
+image::devspaces-new-terminal.png[Open a new terminal from the Dev Spaces Terminal menu,width=90%]
+
+If you prefer keyboard shortcuts, use kbd:[Ctrl+Shift+`] on Windows/Linux or
+kbd:[Control+Shift+`] on macOS.
+
+Then run:
 
 [source,console,role=execute]
 ----
@@ -109,10 +129,7 @@ Your output should end with this summary:
 
 [source,text]
 ----
-Total: 8
-Passed: 3
-Rejected: 5
-Rejection rate: 62.5%
+Total: 8, Passed: 3, Rejected: 5, Rejection Rate: 62.5%
 ----
 
 Also verify these boundary cases:
@@ -121,8 +138,7 @@ Also verify these boundary cases:
 * `MFG-1006` must show all three failed quality rules.
 * A rejected item must not be counted as passed.
 
-// TODO: Add a screenshot showing the terminal output with Total: 8, Passed: 3, Rejected: 5, and Rejection rate: 62.5%.
-// Suggested filename: quality-checker-success-output.png
+image::quality-checker-success-output.png[Successful quality checker output in the Dev Spaces terminal,width=90%]
 
 == Debug with a Focused Follow-up
 

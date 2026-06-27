@@ -372,8 +372,7 @@ oc logs \
   --tail=50
 ----
 
-// TODO: Add a screenshot showing the rhel-mcp Deployment rollout complete, the rhel-mcp Pod running, and the rhel-mcp Service in the Showroom terminal.
-// Suggested filename: rhel-mcp-rollout-ready.png
+image::rhel-mcp-rollout-ready.png[rhel-mcp Deployment rollout complete and Service ready,width=90%]
 
 Your personal MCP endpoint is:
 
@@ -437,8 +436,7 @@ PY
 
 All three calls must return log entries.
 
-// TODO: Add a screenshot showing the MCP tool test returning entries from access.log, error.log, and auth-events.jsonl.
-// Suggested filename: rhel-mcp-tool-log-results.png
+image::rhel-mcp-tool-log-results.png[RHEL MCP read_log_file results for the allowed application logs,width=90%]
 
 == Perform a Negative Test
 
@@ -480,9 +478,9 @@ Expected result:
 Access to log file '/var/log/messages' is not allowed.
 ....
 
-// TODO: Add a screenshot showing the negative test failure for /var/log/messages because the path is not in the allowlist.
-// Suggested filename: rhel-mcp-negative-allowlist.png
+image::rhel-mcp-negative-allowlist.png[RHEL MCP blocking /var/log/messages because it is outside the log allowlist,width=90%]
 
+////
 == Troubleshooting
 
 === SSH Cannot Write under `/data`
@@ -522,3 +520,4 @@ oc logs \
   deployment/rhel-mcp \
   --tail=100
 ----
+////

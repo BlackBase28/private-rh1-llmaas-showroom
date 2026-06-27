@@ -9,6 +9,9 @@ When Cline runs in OpenShift Dev Spaces, configure it with your personal
 cluster-internal RHEL MCP Service URL.
 
 . Open Cline and select *MCP*.
++
+image::cline-select-mcp.png[Cline MCP button,width=80%]
+
 . Enter these values:
 +
 [cols="1,2"]
@@ -49,7 +52,6 @@ image::cline-mcp-configure-button.png[Cline MCP Configure button,width=80%]
 }
 ----
 +
-image::cline-mcp-configuration.png[Cline MCP configuration file,width=80%]
 
 If Cline was already running, reload the Dev Spaces window or restart the Cline
 session after saving the MCP configuration.
@@ -61,8 +63,8 @@ Use the exact MCP tool name and argument names. `read_log_file` requires
 
 Paste this prompt into Cline:
 
-[listing,role=execute,subs=attributes+]
-....
+[source,text,role=execute,subs=attributes+]
+----
 Use the MCP tool rhel-mcp__read_log_file to read these files from
 {edge_host}:
 
@@ -84,7 +86,7 @@ Do not guess another host or path.
 Correlate the timestamps, user, source IP, request IDs, role changes, denied
 requests, successful administrative access, CVE findings, and data export.
 Return a concise incident timeline, severity, impact, and recommended actions.
-....
+----
 
 image::cline-rhl-mcp-prompt.png[Cline RHEL MCP prompt,width=80%]
 
@@ -98,8 +100,8 @@ image::cline-rhel-mcp-response.png[Cline RHEL MCP response,width=80%]
 
 Paste this prompt into Cline:
 
-[listing,role=execute,subs=attributes+]
-....
+[source,text,role=execute,subs=attributes+]
+----
 Call exactly this MCP tool and arguments:
 
 Tool: rhel-mcp__read_log_file
@@ -111,7 +113,7 @@ Arguments:
 }
 
 Do not use another tool or path.
-....
+----
 
 The request must fail because `/var/log/messages` is not one of the three
 allowed application logs.

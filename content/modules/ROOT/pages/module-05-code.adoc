@@ -139,8 +139,7 @@ image::nav-extensions.png[]
 
 In the search bar, search for **Cline**. Select the extension published by **Cline** and click **Install**.
 
-// TODO: Add a screenshot showing the Cline extension in the marketplace and the Install button.
-// Suggested filename: install-cline.png
+image::install-cline.png[]
 
 When prompted, trust the publisher and install the extension.
 
@@ -150,8 +149,7 @@ You've now installed Cline. Next, let's connect it to your private model.
 
 Navigate to the **Cline sidebar icon** in the left-hand navigation panel.
 
-// TODO: Add a screenshot showing the Cline icon in the VS Code activity bar.
-// Suggested filename: nav-cline.png
+image::cline-start-options-free.png[]
 
 NOTE: If the Cline panel is too narrow, expand it by dragging its border.
 
@@ -164,17 +162,19 @@ To connect Cline to the MaaS model, you must provide the endpoint URL, API key, 
 
 NOTE: If needed, go back to the OpenShift AI dashboard to the AI asset endpoints section to retrieve the credentials.
 
+=== Choose Bring Your Own Key
+
+When Cline asks **How will you use Cline?**, select **Bring my own API key**.
+
+This option is also known as **BYOK**, or **Bring Your Own Key**. It lets you connect Cline to the MaaS model endpoint and API token provided in this workshop instead of using Cline's hosted model options.
+
+image::cline-byok-option.png[]
+
+Click **Continue** to configure your provider.
+
 === Enter MaaS endpoint details
 
-In the Cline panel, click the settings icon (gear) to open the provider settings.
-
-// TODO: Add a screenshot showing the settings icon in the Cline panel.
-// Suggested filename: cline-open-settings.png
-
-For **API Provider**, select **OpenAI Compatible**.
-
-// TODO: Add a screenshot showing OpenAI Compatible selected as the API Provider.
-// Suggested filename: cline-openai-compatible.png
+On the **Configure your provider** screen, set **API Provider** to **OpenAI Compatible**.
 
 Enter the following values:
 
@@ -190,13 +190,13 @@ For example:
 
 IMPORTANT: Use the route copied from your own MaaS interface. Ensure that the Base URL ends in `/v1`, and do not share your API key.
 
-// TODO: Add a screenshot showing all three completed fields. Mask most of the API key.
-// Suggested filename: cline-maas-provider-settings.png
+image::cline-maas-provider-settings.png[]
 
-Click **Verify** to confirm that Cline can connect to the model.
+Click **Continue** to save the provider configuration.
 
-// TODO: Add a screenshot showing successful provider verification.
-// Suggested filename: cline-provider-verified.png
+NOTE: If Cline shows an **Introducing Cline Kanban** prompt after saving the provider configuration, you do not need to install it for this workshop. Do not click **Run in terminal**. Close the prompt and continue.
+
+image::cline-kanban-do-not-install.png[]
 
 Reference the provider configuration documentation here: https://docs.cline.bot/provider-config/openai-compatible[Cline OpenAI-Compatible Provider Documentation]
 
@@ -204,8 +204,7 @@ When the model is properly configured, return to the Cline chat panel and confir
 
 Go ahead and send a short test message to confirm that the model responds.
 
-// TODO: Add a screenshot showing the selected model and a successful test response in Cline.
-// Suggested filename: cline-test-response.png
+image::cline-test-response.png[]
 
 NOTE: If the Dev Spaces workspace is recreated or the Cline settings are reset, repeat the provider configuration with your MaaS endpoint and a valid API token.
 

@@ -20,8 +20,18 @@ Our home base will be our OpenShift cluster web console:
 
 **Login Credentials**:
 
-. **User**: {user}
-. **Password**: {password}
+. **User**
++
+[source,console,role=execute,subs=attributes+]
+----
+{user}
+----
+. **Password**
++
+[source,console,role=execute,subs=attributes+]
+----
+{password}
+----
 
 From here, we will navigate to and between the following environments throughout our workshop:
 
@@ -137,10 +147,8 @@ In the chat, enter:
 
 [source,console,role=execute,subs=attributes+]
 ----
-List all pods in the wksp-user[x] namespace.
+List all pods in the wksp-{user} namespace.
 ----
-
-NOTE: Replace the `x` with your user number.
 
 Response output will vary slightly, but you should see it correctly list out two active pods. One for the Llama Stack playground and the other for the Dev Spaces workspace.
 
@@ -148,10 +156,8 @@ Let's try something else:
 
 [source,console,role=execute,subs=attributes+]
 ----
-Get logs for the lsd-genai-playground pod in the wksp-user[x] namespace.
+Get logs for the lsd-genai-playground pod in the wksp-{user} namespace.
 ----
-
-NOTE: You will need to again replace the `x` with your user number.
 
 Feel free to experiment further with the tools available.
 
@@ -180,18 +186,18 @@ Now, let's post a message to our Slack workspace:
 
 [source,console,role=execute,subs=attributes+]
 ----
-Post a message to the #rh1-2026 channel: "Hi from <insert name>".
+Post a message to the #rh-tw-tam-day-2026 channel: "Hi from <insert name>".
 ----
 
 ==== Send logs to Slack
 
 Now, let's try out a very real use case for this! It may not be done through a chat UI like this, but it's a good example of how you can use agentic AI to help you with your work. In a production environment, you would likely use a more robust automation to send logs or other information from your OpenShift cluster to Slack.
 
-Let's send the logs for the lsd-genai-playground pod to the #rh1-2026 channel.
+Let's send the logs for the lsd-genai-playground pod to the #rh-tw-tam-day-2026 channel.
 
 [source,console,role=execute,subs=attributes+]
 ----
-Post the logs for the lsd-genai-playground pod in the wksp-user[x] namespace to the #rh1-2026 channel in Slack.
+Post the logs for the lsd-genai-playground pod in the wksp-{user} namespace to the #rh-tw-tam-day-2026 channel in Slack.
 ----
 
 == Summary: What You Did
@@ -203,4 +209,4 @@ In this module, you:
 * Interacted with a Slack workspace using natural language
 * Added AI guardrails with input/output shields.
 
-You just used AI to reduce operational complexity and speed up workflows! 
+You just used AI to reduce operational complexity and speed up workflows!
