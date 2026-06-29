@@ -17,6 +17,8 @@ You will complete an enterprise-style AI-assisted remediation flow:
 * Trigger an approved Ansible Automation Platform remediation job
 * Validate that ordinary users are denied and administrators are allowed
 
+
+////
 == Your Environment
 
 Each learner has an isolated target workload:
@@ -263,3 +265,4 @@ This lab intentionally keeps control boundaries clear:
 * AAP job history and chat notifications provide audit context.
 
 The same pattern can be extended to RHEL VM targets by replacing the per-user OpenShift workload with AAP inventory, credentials, and host-level deployment tasks.
+////

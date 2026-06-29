@@ -3,19 +3,96 @@
 [#closing-summary]
 = Closing Summary
 
-Over the course of this hands-on workshop, you experienced how generative AI and agentic systems can be:
+Over the course of this hands-on workshop, you followed an enterprise
+remediation journey from shared AI infrastructure to controlled Edge
+deployment.
 
-* Deployed and secured
-* Exposed as scalable services
-* Integrated into real workflows
-* Observed and monitored for impact
+You worked across two common personas:
 
-All within an enterprise-ready OpenShift AI environment.
+* As an SRE or DevOps practitioner, you prepared the platform foundation:
+Models-as-a-Service, OpenShift AI, Llama Stack, MCP servers, Grafana
+observability, and controlled access to RHEL or Edge system data.
+* As a developer, you used an AI Development Agent in OpenShift Dev Spaces to
+generate code, review proposed changes, test behavior, analyze remote logs,
+and prepare a remediation workflow.
 
-== What's next
+The main takeaway is not that AI can generate text or code. The important
+pattern is that AI can participate in an enterprise workflow while staying
+inside clear control boundaries.
 
-Learn more in our `Resources` section.
+== What You Built and Validated
 
+By the end of the workshop, you practiced how to:
+
+* Use a shared model endpoint instead of deploying duplicate models for each
+team or application.
+* Connect playground and development tools to a governed MaaS endpoint.
+* Use MCP servers to expose approved operational context to AI clients.
+* Inspect OpenShift resources and application logs through natural language.
+* Observe model usage and platform activity through Grafana dashboards.
+* Configure Cline in OpenShift Dev Spaces with a private model endpoint.
+* Generate and review application code changes before accepting them.
+* Validate behavior with tests and explicit expected results.
+* Keep remediation auditable through Git, AAP job history, and validation
+output.
+
+== The Enterprise Pattern
+
+The workflow you completed can be summarized as:
+
+[cols="1,2"]
+|===
+|Stage |Control point
+
+|Model access
+|RHOAI exposes a shared, governed MaaS endpoint.
+
+|Context access
+|MCP servers provide scoped access to approved tools and data.
+
+|Investigation
+|AI assists with analysis, but the learner reviews the evidence and proposed
+next step.
+
+|Code change
+|Cline proposes source changes in the developer workspace for human review.
+
+|Deployment
+|Git and AAP provide controlled deployment, validation, and audit history.
+
+|Verification
+|The fixed application is tested with concrete pass/fail behavior.
+|===
+
+This pattern is intentionally modular. In a real environment, you can replace
+the sample portal application with another workload, extend the MCP allowlist
+to approved operational data, or route deployment through your existing GitOps
+and automation processes.
+
+== Discussion Prompts
+
+Use these questions to connect the lab back to your own organization:
+
+* Which operational data should AI clients be allowed to read, and which data
+should remain unavailable?
+* Which actions should require human approval before an AI-assisted workflow can
+continue?
+* Where should audit evidence be stored: Git, AAP job history, chat records,
+ticketing systems, or all of the above?
+* How would you separate read-only investigation tools from deployment or
+remediation tools?
+* What tests or validation gates would be required before promoting an
+AI-generated change into production?
+
+== What's Next
+
+Continue with the xref:module-10-resources.adoc#resources[Resources] section
+for product documentation, project references, and suggested next steps.
+
+If you have extra lab time, revisit xref:module-08-remediate.adoc#remediation-and-redeploy[Module 8]
+and compare where investigation, code generation, deployment approval, and
+post-remediation validation happen. Those boundaries are the heart of a
+production-ready agentic workflow.
 
 
 

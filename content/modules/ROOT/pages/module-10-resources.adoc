@@ -3,8 +3,55 @@
 [#resources]
 = Resources for further learning
 
-* https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/latest[OpenShift AI Documentation]
-* https://developers.redhat.com/products/openshift-dev-spaces/overview[Try Red Hat OpenShift Dev Spaces]
-* https://github.com/cline/cline[Cline GitHub Repository]
+Use these resources to continue exploring the tools and patterns used in this
+workshop.
+
+== Red Hat AI and Platform Documentation
+
+* https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/latest[Red Hat OpenShift AI Documentation]
+* https://docs.redhat.com/en/documentation/red_hat_openshift_container_platform/latest[Red Hat OpenShift Documentation]
+* https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/latest[Red Hat Ansible Automation Platform Documentation]
+* https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/latest[Red Hat Enterprise Linux Documentation]
+* https://developers.redhat.com/products/openshift-dev-spaces/overview[Red Hat OpenShift Dev Spaces Overview]
+
+== Agentic AI, MCP, and Developer Tools
+
 * https://llama-stack.readthedocs.io/en/latest/[Llama Stack Documentation]
-* https://modelcontextprotocol.io/overview[Model Context Protocol (MCP)]
+* https://modelcontextprotocol.io/overview[Model Context Protocol Overview]
+* https://github.com/modelcontextprotocol[Model Context Protocol GitHub Organization]
+* https://github.com/cline/cline[Cline GitHub Repository]
+* https://docs.cline.bot/[Cline Documentation]
+
+== Workshop Concepts to Reuse
+
+The lab used a few repeatable design ideas that can be adapted to real
+enterprise workflows:
+
+* Use shared model endpoints for consistent access control, cost management,
+and operational visibility.
+* Keep tool access scoped. MCP servers should expose only the data and actions
+needed for the workflow.
+* Separate investigation from remediation. Read-only analysis can be more
+permissive than deployment or system-changing operations.
+* Require review before accepting generated code, configuration, or automation
+changes.
+* Keep an audit trail in systems your organization already trusts, such as Git,
+AAP job history, OpenShift events, observability tools, and incident channels.
+
+== Suggested Follow-up Exercises
+
+* Add another read-only MCP tool and define the data it is allowed to access.
+* Extend the log analysis prompt with a stricter incident report format.
+* Add more tests to the portal application before running the remediation flow.
+* Replace the sample notification channel with your team's incident response
+channel.
+* Compare the same remediation workflow using OpenShift GitOps, AAP, or both.
+
+== Related Workshop Sections
+
+* xref:module-01-introduction.adoc#maas_introduction[Module 1: Models-as-a-Service]
+* xref:module-02-agentic.adoc#agentic-ai[Module 2: Agentic AI for system administration]
+* xref:module-04-rhelmcp.adoc#install-mcp[Module 4: RHEL MCP installation and validation]
+* xref:module-05-code.adoc#code-asst[Module 5: Cline and Dev Spaces setup]
+* xref:module-07-analysis.adoc#analysis-logs[Module 7: Edge log analysis]
+* xref:module-08-remediate.adoc#remediation-and-redeploy[Module 8: Remediation and redeployment challenge]
