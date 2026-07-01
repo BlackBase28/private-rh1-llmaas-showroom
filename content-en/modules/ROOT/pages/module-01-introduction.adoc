@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-01-introduction.adoc
 
 [#maas_introduction]
 = From Infrastructure Complexity to Models-as-a-Service

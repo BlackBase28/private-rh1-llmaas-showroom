@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-10-resources.adoc
 
 [#resources]
 = Resources for further learning

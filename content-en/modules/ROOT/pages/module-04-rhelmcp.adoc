@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-04-rhelmcp.adoc
 
 [#install-mcp]
 = Install and Validate RHEL MCP

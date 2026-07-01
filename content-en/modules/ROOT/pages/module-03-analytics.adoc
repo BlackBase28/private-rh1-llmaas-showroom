@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-03-analytics.adoc
 
 [#model-analytics]
 = Usage Analytics and Reporting

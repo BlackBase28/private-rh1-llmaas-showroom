@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-07-analysis.adoc
 
 [#analysis-logs]
 = Analyze the Edge Application Logs
