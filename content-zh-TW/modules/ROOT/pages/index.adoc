@@ -1,0 +1,7 @@
+:imagesdir: ../assets/images
+
+= 企業級自動修復 AI Agent
+
+這是繁體中文多語系試作版本。目前僅翻譯 Module 1，用來驗證 Antora 版本、導覽與語言切換體驗。
+
+* xref:module-01-introduction.adoc#maas_introduction[前往模組 1：簡介]

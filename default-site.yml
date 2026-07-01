@@ -2,23 +2,20 @@
 site:
   title: Agentic AI for Enterprise Remediation
   url: https://github.com/RHTW-TAM-Day-2026/private-rh1-llmaas-showroom
-  start_page: modules::index.adoc
+  start_page: en@modules::index.adoc
 
 content:
   sources:
     - url: .
-      start_path: content
+      start_path: content-en
+    - url: .
+      start_path: content-zh-TW
 
 ui:
   bundle:
     url: ./ui-bundle-tam-day-2026.zip
     snapshot: true
-  supplemental_files:
-    - path: ./content/supplemental-ui
-    - path: ./content/lib
-    - path: .nojekyll
-    - path: ui.yml
-      contents: "static_files: [ .nojekyll ]"
+  supplemental_files: ./content/supplemental-ui
 
 runtime:
   cache_dir: ./.cache/antora

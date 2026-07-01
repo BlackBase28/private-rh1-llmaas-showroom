@@ -1,0 +1,26 @@
+name: modules
+title: 企業級自動修復 AI Agent
+version: zh-TW
+display_version: 繁體中文
+nav:
+  - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    release-version: zh-TW
+    page-pagination: true
+    experimental:
+    numbered:
+    lab_name: "企業級自動修復 AI Agent"
+    user: user1
+    openshift_cluster_ingress_domain: apps.cluster-guid.guid.sandbox.opentlc.com
+    page-header-title: 企業級自動修復 AI Agent
+    page-languageswitcher: languageswitcher
+    page-links-label: 連結
+    page-language-label: 語言
+    page-user-label: 目前使用者
+    page-user: "{user}"
+    page-links: links
+    page-rhoai_dashboard_url: "https://rhods-dashboard-redhat-ods-applications.{openshift_cluster_ingress_domain}/"
+    page-openshift_cluster_console_url: "https://console-openshift-console.{openshift_cluster_ingress_domain}"
+    imagesdir: ../assets/images

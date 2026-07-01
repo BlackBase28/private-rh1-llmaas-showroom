@@ -1,12 +1,13 @@
 name: modules
 title: Agentic AI for Enterprise Remediation
-version: main
+version: en
+display_version: English
 nav:
   - modules/ROOT/nav.adoc
 
 asciidoc:
   attributes:
-    release-version: main
+    release-version: en
     page-pagination: true
     experimental:
     numbered:
@@ -44,6 +45,11 @@ asciidoc:
     deliverable: lab
     productname-long: Red Hat OpenShift AI
     productname-short: OpenShift AI
+    page-header-title: Agentic AI for Enterprise Remediation
+    page-languageswitcher: languageswitcher
+    page-links-label: Links
+    page-language-label: Language
+    page-user-label: You are
     page-user: "{user}"
     page-links: links
     page-rhoai_dashboard_url: "https://rhods-dashboard-redhat-ods-applications.{openshift_cluster_ingress_domain}/"
