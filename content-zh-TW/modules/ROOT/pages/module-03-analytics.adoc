@@ -1,0 +1,96 @@
+:imagesdir: ../assets/images
+
+[#model-analytics]
+= 使用量分析與報告
+
+在本模組中，您將扮演技術決策者或平台利害關係人的角色——不僅負責建構 AI 服務，更要了解並報告這些服務對業務的實際影響。
+
+您已完成模型的部署、公開與使用。現在是時候進一步探討：
+
+* 模型的使用情況如何？
+* 誰使用最頻繁？
+* 成本是多少？回報又是什麼？
+
+讓我們逐步了解如何利用 Grafana 儀表板及 Prometheus 可觀測性堆疊的平台層指標來回答這些問題。
+
+== 為什麼這很重要
+
+隨著 AI 採用率持續成長，能見度至關重要。組織需要追蹤：
+
+* 依團隊或模型區分的模型/API 使用量
+* 隨時間變化的呼叫量
+* 熱門端點
+* 成本效益比
+* 基礎設施影響（例如 GPU 使用率）
+
+這些洞察能夠支援：
+
+* 成本分攤（依團隊、模型、環境分別計算）
+
+* 容量規劃（預測未來的基礎設施擴展需求）
+
+* 了解 AI 工作負載的投資回報率（ROI）
+
+[#analytics-overview]
+== 查看模型使用量
+
+* 從叢集導覽選單進入 `Grafana` 應用程式：
+
+image::en@modules:ROOT:grafana-app.png[]
+
+* 在儀表板頁面選擇 `grafana`。
+
+image::en@modules:ROOT:dashboards-grafana.png[]
+
+* 選擇 `MaaS Token Metrics Dashboard`
+
+image::en@modules:ROOT:maas-dashboard.png[]
+
+Grafana 可以查看所有使用者的指標，因此除了您自己的資料之外，您也會在儀表板統計中看到其他使用者的資料（前提是工作坊進行到此階段時，叢集中其他使用者已有使用模型的記錄！）。
+
+您可以依使用者、模型（本工作坊只有一個模型）以及時間範圍篩選資訊。
+
+image::en@modules:ROOT:use-grafana-db.png[]
+
+=== 了解資料內容
+
+**Total Authorized Hits（授權命中總數）**
+
+代表 Token 使用的總計數。
+
+**Authorized Hits by User and Tier（依使用者與方案的授權命中數）**
+
+依所選使用者及其方案（本工作坊中所有使用者均為 Premium 方案）分別列出 Token 計數。
+
+**Top 10 Users by Hits（使用量前 10 名使用者）**
+
+依 Token 使用量排名的前 10 位使用者。
+
+**Hourly Authorized Hits by User（依使用者的每小時授權命中數）**
+
+依使用者篩選、以每小時為單位的 Token 使用量。
+
+**Total Authorized Hits by Tier (Time Range)（依方案的授權命中總數，按時間範圍）**
+
+在指定時間範圍內依方案篩選的 Token 使用量。
+
+**Top 5 Users by Cost (Based on Tier Pricing)（依成本排名前 5 名使用者，以方案定價為基準）**
+
+依方案定價計算成本，列出花費最高的前 5 位使用者。
+
+**Detailed Metrics Table（詳細指標表格）**
+
+深入查看此表格中每位使用者的詳細資訊。
+
+== 活用資料
+
+在這樣的儀表板中（您可以根據組織需求自訂），您可以查看任何已部署模型的使用統計，並隨時間監控使用趨勢。
+
+這有助於您監控 AI 服務實際被各團隊使用的情形。
+
+使用量指標不只用於運維管理，還能提供：
+
+* 未來容量規劃的依據
+* 內部計費模型（成本分攤）的資料來源
+* 服務品質評估的指標
+* 根據使用者趨勢判斷產品方向的參考依據

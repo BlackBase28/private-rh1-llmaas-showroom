@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-06-tryit.adoc
 
 [#code]
 = Try It Yourself

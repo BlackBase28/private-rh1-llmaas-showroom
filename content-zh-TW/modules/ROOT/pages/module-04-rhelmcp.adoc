@@ -1,26 +1,21 @@
 :imagesdir: ../assets/images
 
 [#install-mcp]
-= Install and Validate RHEL MCP
+= 安裝並驗證 RHEL MCP
 
-In this module, you will deploy a personal RHEL MCP Server in your Showroom
-namespace. The server connects to your assigned RHEL 10 Edge host over SSH and
-can read only these application logs:
+在本模組中，您將在 Showroom 命名空間中部署個人專屬的 RHEL MCP Server。此伺服器透過 SSH 連線至您分配的 RHEL 10 Edge 主機，並且只能讀取以下應用程式日誌：
 
 * `/var/log/kernel-cve-radar/access.log`
 * `/var/log/kernel-cve-radar/error.log`
 * `/var/log/kernel-cve-radar/auth-events.jsonl`
 
-Your assigned Edge host is `{edge_host}`. The SSH user is `lab-user`, and the
-initial SSH password is `{edge_password}`.
+您分配的 Edge 主機為 `{edge_host}`，SSH 使用者為 `lab-user`，初始 SSH 密碼為 `{edge_password}`。
 
-== Use the Showroom Terminal
+== 使用 Showroom 終端機
 
-Run every command in this module from the terminal displayed on the right side
-of the lab guide.
+本模組中的所有指令，請從實驗指南右側顯示的終端機執行。
 
-The terminal runs in the Showroom Pod with a ServiceAccount that can manage
-resources only in your personal namespace:
+終端機在 Showroom Pod 內運行，使用的 ServiceAccount 只能管理您個人命名空間中的資源：
 
 [source,console,role=execute,subs=attributes+]
 ----
@@ -28,7 +23,7 @@ oc whoami
 oc projects
 ----
 
-Set the namespace used by all commands:
+設定所有指令使用的命名空間：
 
 [source,console,role=execute,subs=attributes+]
 ----
@@ -44,24 +39,19 @@ printf 'MCP_NAMESPACE=%s\nEDGE_HOST=%s\n' \
 
 [WARNING]
 ====
-Do not continue if `EDGE_HOST` displays `edge.example.com`. That is only the
-local documentation build fallback. The workshop administrator must run
-`cluster-init/lab-init.sh` so Showroom receives your assigned `edge_host` and
-`edge_password`.
+若 `EDGE_HOST` 顯示為 `edge.example.com`，請勿繼續。這只是本地文件建置的預設值。工作坊管理員必須先執行 `cluster-init/lab-init.sh`，使 Showroom 接收到您分配的 `edge_host` 和 `edge_password`。
 ====
 
 [IMPORTANT]
 ====
-Do not run `oc new-project`. Your ServiceAccount cannot create projects.
+請勿執行 `oc new-project`，您的 ServiceAccount 無法建立專案。
 
-Do not rely on `oc project` in the Showroom terminal. Its kubeconfig may try to
-write under `/data`, which is not writable. Every command below specifies
-the namespace explicitly with the `MCP_NAMESPACE` shell variable.
+請勿在 Showroom 終端機中依賴 `oc project`，其 kubeconfig 可能嘗試在 `/data` 下寫入，但該路徑不可寫入。以下所有指令均透過 `MCP_NAMESPACE` Shell 變數明確指定命名空間。
 ====
 
-== Verify the Edge Application Logs
+== 確認 Edge 應用程式日誌
 
-Connect to your assigned RHEL 10 host. The password is `{edge_password}`:
+連線至您分配的 RHEL 10 主機，密碼為 `{edge_password}`：
 
 [source,console,role=execute]
 ----
@@ -71,7 +61,7 @@ ssh \
   lab-user@"${EDGE_HOST}"
 ----
 
-Verify the operating system and application logs:
+確認作業系統與應用程式日誌：
 
 [source,console,role=execute]
 ----
@@ -88,14 +78,11 @@ do
 done
 ----
 
-The expected files are `access.log`, `error.log`, and
-`auth-events.jsonl`.
+預期存在的檔案為 `access.log`、`error.log` 和 `auth-events.jsonl`。
 
-=== Create Mock Logs When the Edge Host Is Empty
+=== 當 Edge 主機為空時建立模擬日誌
 
-Skip this section when the application has already created all three logs.
-Otherwise, use the following command on the Edge host. Existing files are not
-overwritten.
+若應用程式已建立全部三個日誌檔，請跳過此節。否則，在 Edge 主機上執行以下指令（現有檔案不會被覆蓋）：
 
 [source,console,role=execute]
 ----
@@ -138,12 +125,11 @@ sudo chmod 0644 /var/log/kernel-cve-radar/error.log
 sudo chmod 0644 /var/log/kernel-cve-radar/auth-events.jsonl
 ----
 
-Run the readability check again before continuing.
+繼續前請再次執行可讀性檢查。
 
-== Generate the MCP SSH Key on the Edge Host
+== 在 Edge 主機上產生 MCP SSH 金鑰
 
-The Linux MCP Server requires key-based SSH authentication. While still
-connected to the Edge host, generate a dedicated key without a passphrase:
+Linux MCP Server 需要金鑰式 SSH 認證。在仍連線至 Edge 主機的情況下，產生一個無密碼短語的專用金鑰：
 
 [source,console,role=execute]
 ----
@@ -157,7 +143,7 @@ if [ ! -f /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user ]; then
 fi
 ----
 
-Authorize the public key without adding duplicate entries:
+授權公鑰（避免重複新增）：
 
 [source,console,role=execute]
 ----
@@ -173,16 +159,16 @@ grep -qxF "${PUBLIC_KEY}" /home/lab-user/.ssh/authorized_keys ||
     >> /home/lab-user/.ssh/authorized_keys
 ----
 
-Return to the Showroom terminal:
+返回 Showroom 終端機：
 
 [source,console,role=execute]
 ----
 exit
 ----
 
-== Copy the Private Key to the Showroom Terminal
+== 將私鑰複製到 Showroom 終端機
 
-Copy the private key from the Edge host. Enter `{edge_password}` when prompted:
+從 Edge 主機複製私鑰，提示時輸入 `{edge_password}`：
 
 [source,console,role=execute]
 ----
@@ -200,12 +186,10 @@ chmod 600 /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
 
 [NOTE]
 ====
-The Showroom terminal has `/home/lab-user` mounted from persistent storage, but
-its `$HOME` may point to `/data`. Use the explicit `/home/lab-user` paths and
-the temporary known-hosts file shown above.
+Showroom 終端機的 `/home/lab-user` 掛載自持久性儲存空間，但其 `$HOME` 可能指向 `/data`。請使用上方所示的明確 `/home/lab-user` 路徑和臨時 known-hosts 檔案。
 ====
 
-Verify passwordless SSH and log access:
+確認無密碼 SSH 及日誌存取：
 
 [source,console,role=execute]
 ----
@@ -217,7 +201,7 @@ ssh \
   'whoami; hostname; tail -n 2 /var/log/kernel-cve-radar/error.log'
 ----
 
-== Create the SSH Key Secret
+== 建立 SSH 金鑰 Secret
 
 [source,console,role=execute]
 ----
@@ -228,9 +212,9 @@ oc create secret generic rhel-mcp-ssh-key \
   oc apply -f -
 ----
 
-== Create the MCP Policy
+== 建立 MCP 政策
 
-The policy allows only `read_log_file` calls to your assigned Edge host.
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`。
 
 [source,console,role=execute]
 ----
@@ -253,10 +237,9 @@ data:
 EOF
 ----
 
-== Deploy the RHEL MCP Server
+== 部署 RHEL MCP Server
 
-`LINUX_MCP_ALLOWED_LOG_PATHS` is an explicit, comma-separated file allowlist.
-It does not represent a recursively allowed directory.
+`LINUX_MCP_ALLOWED_LOG_PATHS` 是一個明確的逗號分隔檔案允許清單，不代表允許整個目錄下的遞迴存取。
 
 [source,console,role=execute]
 ----
@@ -355,7 +338,7 @@ spec:
 EOF
 ----
 
-Wait for the server:
+等待伺服器就緒：
 
 [source,console,role=execute]
 ----
@@ -372,16 +355,16 @@ oc logs \
   --tail=50
 ----
 
-image::rhel-mcp-rollout-ready.png[rhel-mcp Deployment rollout complete and Service ready,width=90%]
+image::en@modules:ROOT:rhel-mcp-rollout-ready.png[rhel-mcp Deployment rollout complete and Service ready,width=90%]
 
-Your personal MCP endpoint is:
+您的個人 MCP 端點為：
 
 [source,text,subs=attributes+]
 ----
 http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp
 ----
 
-== Verify the Service Endpoint
+== 確認服務端點
 
 [source,console,role=execute]
 ----
@@ -389,14 +372,11 @@ curl -i \
   "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
 ----
 
-A plain HTTP GET normally returns `406 Not Acceptable` with a message requiring
-`text/event-stream`. This confirms that DNS and the Service are reachable; curl
-is not performing an MCP protocol handshake.
+一般 HTTP GET 請求通常會返回 `406 Not Acceptable`，並附帶需要 `text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
 
-== Test the MCP Tool
+== 測試 MCP 工具
 
-Use the MCP Server's Python environment to call `read_log_file` through the MCP
-protocol:
+使用 MCP Server 的 Python 環境，透過 MCP 協定呼叫 `read_log_file`：
 
 [source,console,role=execute]
 ----
@@ -434,13 +414,13 @@ asyncio.run(main())
 PY
 ----
 
-All three calls must return log entries.
+三個呼叫均須成功回傳日誌內容。
 
-image::rhel-mcp-tool-log-results.png[RHEL MCP read_log_file results for the allowed application logs,width=90%]
+image::en@modules:ROOT:rhel-mcp-tool-log-results.png[RHEL MCP read_log_file results for the allowed application logs,width=90%]
 
-== Perform a Negative Test
+== 執行否定測試
 
-`/var/log/messages` is not in the allowlist:
+`/var/log/messages` 不在允許清單中：
 
 [source,console,role=execute]
 ----
@@ -471,35 +451,34 @@ asyncio.run(main())
 PY
 ----
 
-Expected result:
+預期結果：
 
 [listing]
 ....
 Access to log file '/var/log/messages' is not allowed.
 ....
 
-image::rhel-mcp-negative-allowlist.png[RHEL MCP blocking /var/log/messages because it is outside the log allowlist,width=90%]
+image::en@modules:ROOT:rhel-mcp-negative-allowlist.png[RHEL MCP blocking /var/log/messages because it is outside the log allowlist,width=90%]
 
 ////
-== Troubleshooting
+== 疑難排解
 
-=== SSH Cannot Write under `/data`
+=== SSH 無法在 `/data` 下寫入
 
-Use explicit paths and a writable known-hosts file:
+使用明確路徑和可寫入的 known-hosts 檔案：
 
 [source,console,role=execute]
 ----
 -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts
 ----
 
-=== `oc project` Reports `mkdir /data: permission denied`
+=== `oc project` 回報 `mkdir /data: permission denied`
 
-Keep `MCP_NAMESPACE` set and pass it with `-n` on every `oc` command. No
-project switch is required.
+保持 `MCP_NAMESPACE` 已設定，並在每個 `oc` 指令中以 `-n` 傳入。不需要切換專案。
 
-=== MCP Reports `SSH connection closed`
+=== MCP 回報 `SSH connection closed`
 
-Restart the deployment to clear stale MCP or SSH sessions:
+重新啟動部署以清除過期的 MCP 或 SSH 工作階段：
 
 [source,console,role=execute]
 ----
@@ -511,7 +490,7 @@ oc rollout status deployment/rhel-mcp \
   --timeout=5m
 ----
 
-=== View Server Logs
+=== 查看伺服器日誌
 
 [source,console,role=execute]
 ----

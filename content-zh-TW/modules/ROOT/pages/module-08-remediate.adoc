@@ -1,0 +1,268 @@
+:imagesdir: ../assets/images
+
+[#remediation-and-redeploy]
+= 挑戰 / 加碼：修復並重新部署
+
+在本實驗中，您將調查並修復自己 OpenShift 工作負載中的安全事件。
+
+應用程式本身運作正常，但授權機制已損壞：一般使用者可以存取 `/admin`。
+
+== 實驗目標
+
+您將完成一個企業級的 AI 輔助修復流程：
+
+* 使用 Red Hat OpenShift AI 和 MCP 工具調查事件
+* 使用 OpenShift Dev Spaces 中的 Cline 修復應用程式程式碼
+* 在部署前審查生成的程式碼差異
+* 觸發已核准的 Ansible Automation Platform 修復工作
+* 驗證一般使用者被拒絕存取，管理員可正常存取
+
+
+////
+== 您的環境
+
+每位學員都有一個獨立的目標工作負載：
+
+[listing,subs=attributes+]
+----
+Namespace: tam-{user}
+Application: portal-{user}
+Route: https://portal-{user}.{openshift_cluster_ingress_domain}
+----
+
+測試憑證：
+
+[cols="1,1,1"]
+|===
+|角色 |使用者名稱 |密碼
+
+|一般使用者
+|user
+|user123
+
+|管理員
+|admin
+|admin123
+|===
+
+== 確認損壞狀態
+
+開啟您的 portal 路由：
+
+[source,console,role=execute,subs=attributes+]
+----
+https://portal-{user}.{openshift_cluster_ingress_domain}
+----
+
+確認健康狀態端點正常運作：
+
+[source,console,role=execute,subs=attributes+]
+----
+curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
+----
+
+以一般使用者身分登入：
+
+[source,console,role=execute,subs=attributes+]
+----
+curl -k -c cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"user123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+----
+
+存取管理員頁面：
+
+[source,console,role=execute,subs=attributes+]
+----
+curl -k -b cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+初始結果為：
+
+[listing]
+----
+HTTP/1.1 200 OK
+----
+
+這是刻意設計的安全缺陷。應用程式正常運行，但其授權政策已損壞。
+
+// TODO: Add a screenshot showing the ordinary user /admin request returning HTTP/1.1 200 OK before remediation.
+// Suggested filename: portal-broken-admin-access.png
+
+== 使用 RHOAI Playground 調查
+
+開啟 Red Hat OpenShift AI 並進入 Gen AI Playground。
+
+啟用以下 MCP 伺服器：
+
+* Kubernetes MCP Server
+* Rocket.Chat MCP Server
+* AAP MCP Server
+
+使用以下提示：
+
+[listing,role=execute,subs=attributes+]
+----
+We are investigating a security incident for my lab user {user}.
+The portal application is in namespace tam-{user} and the route is
+https://portal-{user}.{openshift_cluster_ingress_domain}.
+
+Please inspect the portal pod logs, deployment metadata, and recent validation output.
+Explain why an ordinary user can access /admin and propose a minimal secure code fix.
+Do not trigger any deployment yet.
+----
+
+預期的根本原因分析為：
+
+* `/admin` 只檢查使用者是否已登入。
+* `/admin` 未強制執行 `admin` 角色。
+* 一般使用者應收到 HTTP 狀態碼 `403`。
+
+// TODO: Add a screenshot showing the RHOAI Playground root-cause analysis explaining the missing admin role check.
+// Suggested filename: playground-portal-root-cause.png
+
+== 使用 Cline 修復應用程式
+
+開啟您的 OpenShift Dev Spaces 工作區和 portal 應用程式儲存庫。
+
+使用 Cline 搭配 RHOAI 代管的模型端點。向 Cline 提問：
+
+[listing,role=execute]
+----
+This Flask portal has a broken authorization bug.
+The /admin route currently allows any authenticated user.
+
+Please make the smallest safe code change so:
+- unauthenticated users receive 401
+- ordinary users receive 403
+- admin users receive 200
+- /healthz remains 200
+
+Also update or add tests that prove these behaviors.
+Show me the diff before I commit.
+----
+
+在接受變更前，審查建議的程式碼修改。
+
+// TODO: Add a screenshot showing Cline's proposed authorization diff and test changes before accepting them.
+// Suggested filename: cline-portal-auth-diff.png
+
+執行本地測試：
+
+[source,console,role=execute]
+----
+pytest -q
+----
+
+// TODO: Add a screenshot showing pytest passing for the portal authorization tests.
+// Suggested filename: portal-pytest-success.png
+
+提交您的修復：
+
+[source,console,role=execute]
+----
+git status
+git add app.py tests/test_authorization.py
+git commit -m "Fix admin authorization check"
+git push
+----
+
+== 觸發 AAP 修復
+
+部署前，先確認程式碼差異可接受。
+
+啟動已核准的 AAP 工作範本：
+
+[listing,role=execute]
+----
+tam-day-portal-remediate
+----
+
+提供以下問卷變數：
+
+[source,yaml,role=execute,subs=attributes+]
+----
+username: "{user}"
+namespace: "tam-{user}"
+app_name: "portal-{user}"
+route_url: "https://portal-{user}.{openshift_cluster_ingress_domain}"
+image: "quay.io/YOUR_ORG/tam-day-portal:fixed"
+notify_channel: "#rh-tam-alerts"
+----
+
+AAP 工作將會：
+
+* 修補您的 portal Deployment
+* 等待部署完成
+* 執行安全驗證
+* 回報結果
+
+// TODO: Add a screenshot showing the AAP job template survey filled with username, namespace, app_name, route_url, image, and notify_channel.
+// Suggested filename: aap-portal-remediation-survey.png
+
+// TODO: Add a screenshot showing the AAP remediation job completed successfully with validation output.
+// Suggested filename: aap-portal-remediation-success.png
+
+== 驗證修復後的狀態
+
+一般使用者存取 `/admin` 現在必須失敗：
+
+[source,console,role=execute,subs=attributes+]
+----
+curl -k -c cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"user123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+
+curl -k -b cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+預期結果：
+
+[listing]
+----
+HTTP/1.1 403 FORBIDDEN
+----
+
+// TODO: Add a screenshot showing ordinary user access to /admin returning HTTP/1.1 403 FORBIDDEN after remediation.
+// Suggested filename: portal-fixed-user-forbidden.png
+
+管理員存取必須仍然正常：
+
+[source,console,role=execute,subs=attributes+]
+----
+curl -k -c admin-cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/login
+
+curl -k -b admin-cookies.txt -i \
+  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+----
+
+預期結果：
+
+[listing]
+----
+HTTP/1.1 200 OK
+----
+
+// TODO: Add a screenshot showing administrator access to /admin returning HTTP/1.1 200 OK after remediation.
+// Suggested filename: portal-fixed-admin-ok.png
+
+== 治理討論
+
+本實驗刻意保持明確的控制邊界：
+
+* RHOAI 和 MCP 協助調查。
+* Cline 在開發者工作區提出並套用原始碼變更。
+* Git 記錄程式碼變更。
+* AAP 執行部署和驗證。
+* 修復前需要人工核准。
+* AAP 工作歷史和聊天通知提供稽核脈絡。
+
+此模式可透過將每位使用者的 OpenShift 工作負載替換為 AAP 清單、憑證和主機層級部署任務，擴展到 RHEL VM 目標。
+////

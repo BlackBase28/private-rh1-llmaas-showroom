@@ -1,0 +1,212 @@
+:imagesdir: ../assets/images
+
+[#agentic-ai]
+= 使用 AI 代理進行系統管理
+
+現在，您將扮演一位專注於可觀測性、診斷與運維規模化的 **網站可靠性工程師（SRE）或 DevOps 從業者**。
+
+您不必單打獨鬥——您將與 AI 代理工具協作，即時瀏覽 OpenShift 環境，就像一支現代 SRE 團隊建構洞察驅動的自動化流程一樣。
+
+
+== 環境介紹
+
+第一步，先熟悉我們的環境及其組成元件。
+
+我們的主要操作介面是 OpenShift 叢集 Web 主控台：
+
+// NOTE: If you are accessing these instructions through our Red Hat Demo Platform workshop, the information below will render properly with unique values. If you are accessing the instructions separately for your own cluster, from the GitHub repository, you will instead see placeholder values.
+
+**主控台 URL**: https://console-openshift-console.{openshift_cluster_ingress_domain}/[https://console-openshift-console.{openshift_cluster_ingress_domain}/,window=_blank].
+
+**登入憑證**:
+
+. **使用者名稱**
++
+[source,console,role=execute,subs=attributes+]
+----
+{user}
+----
+. **密碼**
++
+[source,console,role=execute,subs=attributes+]
+----
+{password}
+----
+
+在整個工作坊中，我們將在以下環境之間切換：
+
+* **Cluster Argo CD**
+** 可用來查看 GitOps 應用程式的部署狀態，在需要確認應用程式健康狀態時非常有用。
+* **Grafana**
+** 儀表板介面，用於顯示模型使用量指標。
+* **Red Hat OpenShift AI**
+** 用於查看及管理模型部署，以及其他 MLOps/LLMOps 任務與代理資源。
+* **Red Hat OpenShift Dev Spaces**
+** 進入開發者角色，並利用模型即服務架構執行程式開發任務。
+
+您可以透過 Web 主控台中的導覽按鈕進入這些應用程式：
+
+image::en@modules:ROOT:apps-menu.png[]
+
+現在您已了解如何切換環境，冒險正式開始！
+
+== 為什麼管理員需要 AI 代理？
+
+把 AI 代理想像成您進行叢集運維的副駕駛——隨時準備好利用推理能力和即時資料，回答複雜的基礎設施問題。
+
+不需要手動瀏覽複雜的儀表板、YAML 和 Shell 腳本，試試用這種方式：
+
+* 「現在開發叢集中哪個服務消耗最多記憶體？」
+
+* 「過去 30 分鐘內有任何 Pod 崩潰嗎？」
+
+* 「今早那個 Job 為什麼失敗了？」
+
+這些自然語言提示會被轉換成真實的查詢並回傳結果。最終效益？更快的問題解決速度、更高的系統透明度，以及降低技術與非技術人員獲取運維洞察的門檻。
+
+這就是 AI 代理能力的體現。
+
+== 認識您的新工具組
+
+在本模組中，我們將使用預先設定好的技術堆疊，包括：
+
+* **https://github.com/meta-llama/llama-stack[Llama Stack]** - Meta 開發的靈活開源框架，旨在簡化進階 AI 應用程式的建立與部署。
+** Llama Stack 提供統一的 API 層，涵蓋推理、RAG、代理、工具、安全防護、評估及遙測。
+** **對企業的重要性**：
+*** 將生成式 AI 工具的最佳實踐標準化
+*** 實現可重現、可解釋且可擴充的 AI 工作流程
+*** 簡言之，讓您專注於創造價值，而非組裝工具鏈。
+
+IMPORTANT: 您可以在 OpenShift AI 中搭配 Llama Stack 使用 LangChain 或 CrewAI 等框架。這些工具結合使用，能幫助您建構具備推理、工具呼叫與協調能力的 AI 代理工作流程。Llama Stack 是 Red Hat 推薦且官方支援的框架，用於將代理系統中各異質元件標準化整合為一個可觀測、安全的統一堆疊。
+
+* **Kubernetes MCP Server** - 讓 LLM 代理能夠與運行中的 OpenShift 叢集及已部署的資源互動。
+
+* **Slack MCP Server** - 讓 LLM 代理能夠與 Slack 工作區互動。我們將使用它與一個已完成授權設定的特定 Slack 工作區進行互動。
+
+== 與我們的 MaaS 模型端點整合
+
+您可以將 Llama Stack 伺服器部署連接到任意模型端點。在本工作坊中，我們的 Llama Stack 伺服器實例已配置 Qwen 模型和兩個 MCP 伺服器。
+
+== 在 Playground 中測試模型與 MCP 伺服器功能
+
+* 返回 Red Hat OpenShift AI 儀表板。由於無法從工作區或 OpenShift Dev Spaces 直接導覽，請先回到 OpenShift Web 主控台：
+
+image::en@modules:ROOT:nav-rhoai-2.png[]
+
+* 從導覽選單選擇 `AI asset endpoints`。
+
+image::en@modules:ROOT:nav-aiassets.png[]
+
+* 將專案切換回 `Workspace userx`。
+
+image::en@modules:ROOT:aiassets-changeproject.png[]
+
+* 查看 MCP 伺服器
+
+image::en@modules:ROOT:genaistudio-mcpservers.png[]
+
+* 確認可用項目後，同時選取兩個 MCP 伺服器，然後點擊 `Try in Playground`。
+
+image::en@modules:ROOT:mcp-try-playground.png[]
+
+=== 使用 Playground
+
+歡迎來到 Playground！在直接整合到應用程式之前，您可以在此使用友善的儀表板介面測試模型、資產及其他連線。
+
+作為開發者，Playground 通常不是您連接資源的主要方式。然而，在投入進一步開發之前，這是驗證所選模型、已設定的 MCP 伺服器以及其他整合元件是否正常協作的絕佳方式。
+
+在 Playground 中，您會看到一個聊天介面，模型已預先選取並附有預設系統提示。如需調整系統提示或溫度參數，請自行修改。
+
+NOTE: 溫度參數控制模型的創意程度。建議保持較低的設定值，以確保模型回應的準確性，尤其是在搭配 MCP 伺服器使用時。
+
+image::en@modules:ROOT:playground.png[]
+
+在開始與模型和 MCP 伺服器對話之前，請先點擊鎖頭按鈕授權 MCP 伺服器：
+
+image::en@modules:ROOT:authorize-mcp.png[]
+
+每次點擊鎖頭按鈕時會出現以下彈出視窗，點擊 `Close` 關閉：
+
+image::en@modules:ROOT:mcp-auth-close.png[]
+
+現在您已完成設定，可以使用聊天介面測試模型及其與 MCP 伺服器的互動功能。
+
+NOTE: 若重新整理頁面或再次進入 Playground，所有設定將恢復為預設值，需重新設定。
+
+.查看工具
+
+點擊伺服器名稱旁的小工具圖示，即可查看 MCP 伺服器提供的可用工具：
+
+image::en@modules:ROOT:view-mcp-tools.png[]
+
+== 探索 OpenShift 資源
+
+您剛才查看的工具資訊，將引導您如何在聊天中正確與模型互動以觸發工具呼叫。您需要使用適當的關鍵字來啟用對應的工具。
+
+在聊天框中輸入：
+
+[source,console,role=execute,subs=attributes+]
+----
+List all pods in the wksp-{user} namespace.
+----
+
+回應輸出結果可能略有不同，但您應該會看到正確列出兩個運行中的 Pod——一個是 Llama Stack Playground，另一個是 Dev Spaces 工作區。
+
+再試試這個：
+
+[source,console,role=execute,subs=attributes+]
+----
+Get logs for the lsd-genai-playground pod in the wksp-{user} namespace.
+----
+
+歡迎繼續自由探索其他可用工具。
+
+=== 發送訊息到 Slack 工作區
+
+透過將 Slack MCP Server 連接到 Llama Stack，我們可以將 AI 代理的應用場景從 Kubernetes 延伸到團隊協作工具（以及更多可能！）。
+
+此 MCP Server 橋接您的 AI 代理與 Slack 工作區，以擷取已授權的資料。
+
+**為什麼這很重要：**
+
+* SRE 和 DevOps 團隊通常需要跨多個協作頻道工作。
+
+* 讓您的 AI 能夠看到 Slack，就能用自然語言查閱團隊溝通空間，無需切換工具。
+
+* 這是一個安全的唯讀範例——本活動中不會讀取或發送任何訊息。
+
+==== 在 LlamaStack Playground 聊天介面中，輸入：
+
+[source,console,role=execute,subs=attributes+]
+----
+List all Slack channels in our Slack workspace.
+----
+
+接著，發送訊息到 Slack 工作區：
+
+[source,console,role=execute,subs=attributes+]
+----
+Post a message to the #rh-tw-tam-day-2026 channel: "Hi from <insert name>".
+----
+
+==== 將日誌傳送到 Slack
+
+現在來試試一個非常貼近實際場景的用例！雖然實際環境不一定透過這樣的聊天介面操作，但這是一個很好的範例，展示如何利用 AI 代理協助您的工作。在生產環境中，您通常會使用更完善的自動化機制，將日誌或其他資訊從 OpenShift 叢集發送至 Slack。
+
+將 lsd-genai-playground Pod 的日誌發送到 #rh-tw-tam-day-2026 頻道：
+
+[source,console,role=execute,subs=attributes+]
+----
+Post the logs for the lsd-genai-playground pod in the wksp-{user} namespace to the #rh-tw-tam-day-2026 channel in Slack.
+----
+
+== 總結：您完成了什麼
+
+在本模組中，您：
+
+* 將自己的 LLM 與具備工具使用能力的代理整合。
+* 使用自然語言探索 OpenShift 資源
+* 使用自然語言與 Slack 工作區互動
+* 透過輸入/輸出防護機制為 AI 加入防護欄。
+
+您剛剛利用 AI 降低了運維複雜度並加速了工作流程！

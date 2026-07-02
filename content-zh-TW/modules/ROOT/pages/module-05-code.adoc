@@ -1,0 +1,219 @@
+:imagesdir: ../assets/images
+
+[#code-asst]
+= 建構 AI 輔助開發環境
+
+從本模組開始，您將扮演開發者的角色。您將進入 OpenShift Web 主控台，取得透過模型即服務（Models-as-a-Service）介面所設定的模型憑證。
+
+== 查看模型部署
+
+OpenShift AI 提供網頁式儀表板介面，讓您可以輕鬆地大規模部署及管理模型，並與 MCP 伺服器或評估工具等其他重要 AI 資產整合。
+
+讓我們開始連線。
+
+**開啟 OpenShift AI 儀表板**
+
+點擊導覽按鈕，從下拉選單選擇 **Red Hat OpenShift AI**。
+
+image::en@modules:ROOT:nav-rhoai.png[]
+
+若出現登入提示，請使用您的使用者憑證再次登入 OpenShift AI 儀表板。
+
+驗證完成後，您將看到以下首頁：
+
+image::en@modules:ROOT:rhoai-dashboard.png[]
+
+接著，進入儀表板的 `Gen AI Studio` 區段，選擇 `AI asset endpoints`。
+
+image::en@modules:ROOT:nav-genaistudio.png[]
+
+在 AI asset endpoints 頁面中，將專案從 `grafana` 切換至 `Workspace userx`，其中 `x` 為您分配的使用者編號。
+
+image::en@modules:ROOT:genaistudio-changeproject.png[]
+
+現在您可以查看可用的資產端點。
+
+在 `Models` 標籤下，您不會看到任何可用模型。為什麼？因為這個專案（專案 = 命名空間）中沒有部署任何模型。
+
+但是，我們在叢集管理員管理的另一個命名空間中部署了一個模型。這位管理員已為我們的組織建立了「模型即服務」架構，部署並管理一個中央模型，供組織內各個遠端團隊使用。
+
+我們沒有足夠的使用者權限來管理模型部署，但可以透過 `Models as a service` 標籤存取其端點資訊。
+
+image::en@modules:ROOT:maas-tab.png[]
+
+選擇該標籤。您會看到管理員已為您部署了一個可使用的模型：`qwen3-4b-instruct`
+
+image::en@modules:ROOT:maas-model.png[]
+
+// Test model in playground
+
+下一節需要用到端點資訊。在 `External endpoint` 欄位下選擇 `View`：
+
+image::en@modules:ROOT:view-endpoint.png[]
+
+將 MaaS 路由複製並儲存到您電腦上的備忘檔案中。
+
+image::en@modules:ROOT:copy-route.png[]
+
+接著，點擊 `Generate API token`。
+
+image::en@modules:ROOT:generate-token.png[]
+
+將此值連同路由端點一起複製保存。
+
+image::en@modules:ROOT:copy-token.png[]
+
+取得模型端點和 API 金鑰後，您可以開始以 AI 開發者的身分工作。您的組織使用 OpenShift Dev Spaces，讓開發團隊能在同一個 OpenShift 叢集內建構和協作。您將使用此工作區搭配 MaaS 端點，完成一個受控的 AI 輔助程式開發練習。
+
+== AI 程式助理的影響
+
+您不只是在寫程式——您將與一位 **AI 驅動的開發夥伴** 協作。
+
+現代程式助理能夠：
+
+* **理解完整專案脈絡**：Cline、GitHub Copilot、Cursor 等助理可以跨檔案和目錄閱讀，了解您的程式碼如何相互配合。
+
+* **以自然語言編輯程式碼**：您可以描述一項變更——例如「在這裡加上錯誤處理」或「將這段改成非同步」——AI 助理就能智慧地套用該變更。
+
+* **主動建議改善方向**：它們能找出錯誤、標示低效之處，並推薦最佳實踐模式。
+
+* **自動化繁瑣任務**：從生成單元測試和文件字串，到建立樣板程式碼或在整個專案中重新命名變數——讓它們處理例行工作，讓您專注於邏輯和設計。
+
+這些助理不只是在寫程式——在適當的防護機制和知識基礎下，它們能理解您的專案，幫助您更快地建構更好的軟體。最棒的是？大多數助理都能無縫整合到 Visual Studio Code 等熱門 IDE 中，讓您無需切換工具即可上手。
+
+讓我們開始設定。
+
+== 步驟 1：使用 OpenShift Dev Spaces 建立雲端整合開發環境（IDE）
+
+作為開發者，您的環境應該快速、一致且隨時可用。這正是 OpenShift Dev Spaces 的核心價值：即時存取預先設定好的容器化工作區——全部安全運行在您的 OpenShift 叢集上。
+
+身為開發者，若模型有適當的對外公開，您也可以在本地環境中使用公開的模型 API 端點。但是，您的公司並未將模型公開到叢集外部，因此您必須在叢集環境中工作，而非在本地端。
+
+NOTE: 雖然您從 OpenShift AI 儀表板介面複製的模型路由顯示為 **External endpoint** 路由，但此叢集中實際上並未公開對外路由。這是因為目前的 MaaS 實作預期需要對外路由公開，所以這個名稱在儀表板中是硬編碼的。
+
+=== 進入 OpenShift Dev Spaces
+
+* 導覽至 OpenShift Dev Spaces 應用程式。
+
+image::en@modules:ROOT:nav-devspaces.png[]
+
+提示輸入登入憑證時，使用與先前步驟相同的使用者帳號登入。
+
+驗證完成後，您將看到 OpenShift Dev Spaces 主控台儀表板。我們已為您準備好一個工作區。這是一個 VSCode IDE 工作區，已預先複製好一個儲存庫並安裝了必要的相依套件。
+
+當工作區名稱旁出現綠點表示完全載入後（可能需要一點時間），點擊 `Open`。
+
+image::en@modules:ROOT:open-workspace.png[]
+
+片刻後，您將看到在瀏覽器中運行的 VSCode 介面。若出現詢問是否信任作者的提示，請點擊「Trust」。我們很友善，相信我！
+
+image::en@modules:ROOT:trust-vscode.png[]
+
+在您的工作區中，您會找到前面提到的已複製 GitHub 儲存庫。這是您在 AI 協助下進行建構和改進的地方。現在唯一需要設定的是我們的程式碼擴充套件。
+
+在深入程式碼之前，讓我們先認識 **Cline**。
+
+== 步驟 2：加入 Cline，您的程式開發夥伴
+
+**Cline** 是一個整合到 VS Code 的開源 AI 程式代理。它提供互動式聊天介面，讓您可以用自然語言描述開發任務。在您的核准下，Cline 可以檢查檔案、提出並套用程式碼變更，以及執行終端機指令。您可以要求 Cline 執行以下操作：
+
+**「為這個函式加上日誌記錄」**
+
+**「為這個檔案生成單元測試」**
+
+**「將這段重構為更小的元件」**
+
+**「說明這段程式碼的作用」**
+
+Cline 直接在您的編輯器中運作，能感知您的程式碼庫和專案脈絡。它會顯示建議的操作和變更，讓您在工作過程中逐一審查並核准。
+
+Cline 在本工作坊中特別有用的原因，在於它支援相容 OpenAI 的模型端點。這讓您能將代理連接到透過模型即服務（MaaS）提供的私有模型。
+
+NOTE: Cline 是本工作坊使用的 AI 程式代理。其他支援自訂模型端點的程式助理也可以實現類似的工作流程。
+
+=== 安裝 Cline
+
+選擇左側底部的導覽項目，開啟擴充套件市集。
+
+image::en@modules:ROOT:nav-extensions.png[]
+
+在搜尋欄中搜尋 **Cline**。選擇由 **Cline** 發布的擴充套件，然後點擊 **Install**。
+
+image::en@modules:ROOT:install-cline.png[]
+
+出現提示時，信任發行者並安裝擴充套件。
+
+您已安裝好 Cline。接下來，讓我們將它連接到您的私有模型。
+
+== 步驟 3：將 Cline 連接到您的 MaaS 模型
+
+導覽至左側導覽面板中的 **Cline sidebar icon**。
+
+image::en@modules:ROOT:cline-start-options-free.png[]
+
+NOTE: 若 Cline 面板太窄，請拖曳其邊框來展開。
+
+在本模組中，我們將進行兩件事：
+
+. 連接到我們的 MaaS 模型
+. 使用模型協助完成、審查和測試一個小型製造品質檢查程式，然後進行 Edge 日誌分析。
+
+要將 Cline 連接到 MaaS 模型，您需要提供來自 MaaS 應用程式的端點 URL、API 金鑰和模型 ID。
+
+NOTE: 如有需要，請返回 OpenShift AI 儀表板的 AI asset endpoints 區段取得憑證。
+
+=== 選擇「自帶金鑰」
+
+當 Cline 詢問 **How will you use Cline?** 時，選擇 **Bring my own API key**。
+
+此選項也稱為 **BYOK**（Bring Your Own Key，自帶金鑰）。它讓您能將 Cline 連接到本工作坊提供的 MaaS 模型端點和 API Token，而不使用 Cline 的代管模型選項。
+
+image::en@modules:ROOT:cline-byok-option.png[]
+
+點擊 **Continue** 設定您的提供者。
+
+=== 輸入 MaaS 端點詳細資訊
+
+在 **Configure your provider** 畫面中，將 **API Provider** 設定為 **OpenAI Compatible**。
+
+輸入以下值：
+
+* **Base URL**：輸入您的 MaaS 路由並在末尾加上 `/v1`。
+* **API Key**：輸入從 MaaS 介面生成的 API Token。
+* **Model ID**：輸入 `qwen3-4b-instruct`。
+
+範例：
+
+* **Base URL**: `https://maas.apps.example.com/llm/qwen3-4b-instruct/v1`
+* **API Key**: `your-actual-api-key-here`
+* **Model ID**: `qwen3-4b-instruct`
+
+IMPORTANT: 請使用從您自己的 MaaS 介面複製的路由。確保 Base URL 以 `/v1` 結尾，並且不要分享您的 API 金鑰。
+
+image::en@modules:ROOT:cline-maas-provider-settings.png[]
+
+點擊 **Continue** 儲存提供者設定。
+
+NOTE: 若儲存提供者設定後，Cline 顯示 **Introducing Cline Kanban** 提示，本工作坊不需要安裝它。請勿點擊 **Run in terminal**，關閉提示後繼續操作。
+
+image::en@modules:ROOT:cline-kanban-do-not-install.png[]
+
+提供者設定文件參考：https://docs.cline.bot/provider-config/openai-compatible[Cline OpenAI-Compatible Provider Documentation]
+
+模型正確設定後，返回 Cline 聊天面板，確認 `qwen3-4b-instruct` 為已選取的模型。
+
+發送一則簡短的測試訊息，確認模型能正常回應。
+
+image::en@modules:ROOT:cline-test-response.png[]
+
+NOTE: 若 Dev Spaces 工作區被重新建立或 Cline 設定被重置，請使用您的 MaaS 端點和有效的 API Token 重新完成提供者設定。
+
+== 準備好用 AI 寫程式了！
+
+您已完成：
+
+* 建立雲端 IDE
+* 安裝 Cline 並設定連接到您的私有 Qwen 模型
+* 設定好一個能重構、編輯和說明程式碼的 AI 助理！
+
+接下來，您將使用 Cline，透過受控的提示-審查-測試工作流程，完成一個小型製造品質檢查程式。

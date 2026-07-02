@@ -1,0 +1,178 @@
+:imagesdir: ../assets/images
+
+[#code]
+= 親自動手試試看
+
+Cline 已連接到共用模型，現在您將使用它來完成一個小型製造業應用程式。目標不是產生一個大型專案，而是練習受控的 AI 輔助開發循環：
+
+. 檢視入門程式碼。
+. 給 Cline 一個專注的任務。
+. 審查建議的變更。
+. 執行程式。
+. 僅在必要時要求一個小幅修正。
+
+本練習使用單一 Python 檔案和 Python 標準函式庫，讓任務對共用的 `qwen3-4b-instruct` 模型保持可靠。
+
+== 情境說明
+
+一條生產線記錄每個製造品項的溫度、振動和缺陷數量。您的應用程式必須讀取範例 CSV 資料，並將每個品項分類為 `PASS`（通過）或 `REJECT`（拒絕）。
+
+只有當以下所有規則都符合時，品項才能通過：
+
+* 溫度在攝氏 `18.0` 到 `25.0` 度之間（含邊界值）。
+* 振動不超過每秒 `4.0` 毫米。
+* 缺陷數量不超過 `2`。
+
+應用程式還必須印出品項總數、通過數量、拒絕數量及拒絕率。
+
+== 開啟入門專案
+
+`code-for-fun` 儲存庫已複製到您的 Dev Spaces 工作區的 `/projects/exercises` 路徑。
+
+在 Explorer 中，開啟：
+
+[source,text]
+----
+manufacturing-quality-checker/
+├── starter/
+│   ├── quality_checker.py
+│   └── sample_readings.csv
+└── solution/
+    └── quality_checker.py
+----
+
+開啟 `starter/quality_checker.py`，在請求 Cline 進行修改前，先閱讀現有程式碼。注意大部分應用程式已經實作完成，只剩兩個 `TODO` 區段。
+
+IMPORTANT: 現在請勿開啟或複製 `solution/quality_checker.py`。`starter` 目錄是您的工作區域，`solution` 目錄是供練習後比對的講師參考解答。
+
+== 使用 Cline 完成 TODO
+
+開啟 Cline 面板並貼上以下提示：
+
+[source,text,role=execute]
+----
+Open starter/quality_checker.py and starter/sample_readings.csv. Complete only
+the code marked TODO 1 and TODO 2 in starter/quality_checker.py.
+
+Requirements:
+- Modify only starter/quality_checker.py.
+- Do not change existing code outside the two TODO sections.
+- Use only the Python standard library.
+- Do not add dependencies or create new files.
+- A reading passes when temperature is 18.0-25.0 C inclusive, vibration is
+  at most 4.0 mm/s, and defect_count is at most 2.
+- For rejected readings, list every failed rule as a short reason.
+- The summary must show total, passed, rejected, and rejection rate.
+- Keep the program simple and under 120 lines.
+- After editing, summarize the changes in no more than five bullets.
+----
+
+當 Cline 建議執行操作時：
+
+. 確認它只編輯 `starter/quality_checker.py`。
+. 審查 `evaluate_reading()` 和 `print_summary()` 附近的變更。
+. 若變更符合要求，點擊 *Save* 接受建議的檔案編輯。
+. 不要核准套件安裝或無關的檔案操作。
+
+Cline 中的 *Save* 按鈕會接受建議的變更並寫入入門檔案。若 Cline 分步驟更新兩個 TODO 區段，請分別審查每個建議的編輯並逐一點擊 *Save*。
+
+image::en@modules:ROOT:cline-quality-checker-diff.png[Cline proposing changes to starter/quality_checker.py with the Save button visible,width=90%]
+
+兩個 TODO 區段都完成後，Cline 應顯示所有請求的任務均已完成。在進行終端機測試前，請再次審查最終的差異比對。
+
+image::en@modules:ROOT:cline-quality-checker-complete.png[Cline showing all tasks completed and the final TODO changes,width=90%]
+
+[TIP]
+====
+小而具體的提示通常比「讓這個應用程式達到企業級水準」這類籠統的要求效果更好。這樣也能減少共用模型的 Token 消耗，並讓建議的程式碼更容易審查。
+====
+
+== 執行品質檢查程式
+
+在 Dev Spaces 中開啟終端機：
+
+. 點擊頂部選單中的 *Terminal*。
+. 點擊 *New Terminal*。
+. 等待終端機提示符出現在編輯器底部。
+
+image::en@modules:ROOT:devspaces-new-terminal.png[Open a new terminal from the Dev Spaces Terminal menu,width=90%]
+
+若您偏好使用鍵盤快捷鍵，在 Windows/Linux 使用 kbd:[Ctrl+Shift+`]，在 macOS 使用 kbd:[Control+Shift+`]。
+
+然後執行：
+
+[source,console,role=execute]
+----
+cd /projects/exercises/manufacturing-quality-checker
+python3 starter/quality_checker.py
+----
+
+您的輸出應以此摘要結尾：
+
+[source,text]
+----
+Total: 8, Passed: 3, Rejected: 5, Rejection Rate: 62.5%
+----
+
+同時確認以下邊界案例：
+
+* `MFG-1007` 必須通過，因為其數值在所有限制範圍內。
+* `MFG-1006` 必須顯示所有三個失敗的品質規則。
+* 被拒絕的品項不得被計入通過數量。
+
+image::en@modules:ROOT:quality-checker-success-output.png[Successful quality checker output in the Dev Spaces terminal,width=90%]
+
+== 使用專注的後續提示進行除錯
+
+若指令失敗或總計數字不正確，請勿要求 Cline 重寫整個程式。請複製錯誤訊息或描述單一失敗的檢查：
+
+[source,text,role=execute]
+----
+The program output does not match the expected summary.
+Inspect starter/quality_checker.py, identify the smallest correction, and edit
+only the TODO function that is incorrect. Do not change other files, create
+files, or install packages.
+----
+
+審查並核准修正後，再次執行程式。
+
+== 選做：要求說明
+
+若您提前完成，可以向 Cline 提出一個唯讀問題：
+
+[source,text,role=execute]
+----
+Explain evaluate_reading() in five short bullets. Do not edit any files.
+----
+
+這展示了 AI 開發代理不僅能協助程式碼修改，也能幫助理解程式碼。
+
+== 卡關了？對照參考解答
+
+講師參考解答位於：
+
+[source,text]
+----
+/projects/exercises/manufacturing-quality-checker/solution/quality_checker.py
+----
+
+不替換您自己的程式碼，直接執行：
+
+[source,console,role=execute]
+----
+python3 solution/quality_checker.py
+----
+
+先比較行為結果。只要您的輸出和品質規則正確，實作方式不需要完全相同。
+
+== 您練習了什麼
+
+您已使用 Cline 完成了：
+
+* 在現有程式碼庫中工作。
+* 套用小而有限制的程式碼變更。
+* 在接受之前審查 AI 生成的編輯。
+* 從終端機測試結果。
+* 使用專注的後續提示進行除錯。
+
+在下一個模組中，您將使用相同的受控工作流程搭配 RHEL MCP，分析來自 Edge 環境的應用程式日誌。

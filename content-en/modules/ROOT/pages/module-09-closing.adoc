@@ -1,4 +1,5 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-09-closing.adoc
 
 [#closing-summary]
 = Closing Summary
@@ -93,6 +94,5 @@ If you have extra lab time, revisit xref:module-08-remediate.adoc#remediation-an
 and compare where investigation, code generation, deployment approval, and
 post-remediation validation happen. Those boundaries are the heart of a
 production-ready agentic workflow.
-
 
 
