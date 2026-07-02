@@ -28,7 +28,7 @@ function parseFlatYaml (input) {
     const separator = line.indexOf(':')
     if (separator === -1) return attributes
 
-    const key = line.slice(0, separator).trim()
+    const key = unquoteYamlScalar(line.slice(0, separator).trim())
     if (!key || key.startsWith('-') || key.includes(' ')) return attributes
 
     const rawValue = line.slice(separator + 1).trim()
