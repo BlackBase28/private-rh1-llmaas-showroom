@@ -1,0 +1,502 @@
+:imagesdir: ../assets/images
+
+[#install-mcp]
+= 安裝並驗證 RHEL MCP
+
+在本模組中，您將在 Showroom 命名空間中部署個人專屬的 RHEL MCP Server。此伺服器透過 SSH 連線至您分配的 RHEL 10 Edge 主機，並且只能讀取以下應用程式日誌：
+
+* `/var/log/kernel-cve-radar/access.log`
+* `/var/log/kernel-cve-radar/error.log`
+* `/var/log/kernel-cve-radar/auth-events.jsonl`
+
+您分配的 Edge 主機為 `{edge_host}`，SSH 使用者為 `lab-user`，初始 SSH 密碼為 `{edge_password}`。
+
+== 使用 Showroom 終端機
+
+本模組中的所有指令，請從實驗指南右側顯示的終端機執行。
+
+終端機在 Showroom Pod 內運行，使用的 ServiceAccount 只能管理您個人命名空間中的資源：
+
+[source,console,role=execute,subs=attributes+]
+----
+oc whoami
+oc projects
+----
+
+設定所有指令使用的命名空間：
+
+[source,console,role=execute,subs=attributes+]
+----
+export MCP_NAMESPACE="showroom-pgvrq-{user}"
+export EDGE_HOST="{edge_host}"
+----
+
+[source,console,role=execute]
+----
+printf 'MCP_NAMESPACE=%s\nEDGE_HOST=%s\n' \
+  "${MCP_NAMESPACE}" "${EDGE_HOST}"
+----
+
+[WARNING]
+====
+若 `EDGE_HOST` 顯示為 `edge.example.com`，請勿繼續。這只是本地文件建置的預設值。工作坊管理員必須先執行 `cluster-init/lab-init.sh`，使 Showroom 接收到您分配的 `edge_host` 和 `edge_password`。
+====
+
+[IMPORTANT]
+====
+請勿執行 `oc new-project`，您的 ServiceAccount 無法建立專案。
+
+請勿在 Showroom 終端機中依賴 `oc project`，其 kubeconfig 可能嘗試在 `/data` 下寫入，但該路徑不可寫入。以下所有指令均透過 `MCP_NAMESPACE` Shell 變數明確指定命名空間。
+====
+
+== 確認 Edge 應用程式日誌
+
+連線至您分配的 RHEL 10 主機，密碼為 `{edge_password}`：
+
+[source,console,role=execute]
+----
+ssh \
+  -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts \
+  -o StrictHostKeyChecking=accept-new \
+  lab-user@"${EDGE_HOST}"
+----
+
+確認作業系統與應用程式日誌：
+
+[source,console,role=execute]
+----
+cat /etc/redhat-release
+
+ls -l /var/log/kernel-cve-radar/
+
+for log in \
+  /var/log/kernel-cve-radar/access.log \
+  /var/log/kernel-cve-radar/error.log \
+  /var/log/kernel-cve-radar/auth-events.jsonl
+do
+  test -r "${log}" && echo "READABLE ${log}"
+done
+----
+
+預期存在的檔案為 `access.log`、`error.log` 和 `auth-events.jsonl`。
+
+=== 當 Edge 主機為空時建立模擬日誌
+
+若應用程式已建立全部三個日誌檔，請跳過此節。否則，在 Edge 主機上執行以下指令（現有檔案不會被覆蓋）：
+
+[source,console,role=execute]
+----
+sudo install -d -o root -g root -m 0755 \
+  /var/log/kernel-cve-radar
+
+if [ ! -e /var/log/kernel-cve-radar/access.log ]; then
+  sudo tee /var/log/kernel-cve-radar/access.log >/dev/null <<'EOF'
+2026-06-26T09:14:18+00:00 10.20.30.41 POST /api/login 401 96 user=alex agent="Mozilla/5.0"
+2026-06-26T09:15:03+00:00 10.20.30.41 POST /api/login 200 312 user=alex agent="Mozilla/5.0"
+2026-06-26T09:18:39+00:00 198.51.100.77 GET /api/admin/users 403 110 user=alex agent="curl/8.5.0"
+2026-06-26T09:19:06+00:00 198.51.100.77 POST /api/admin/roles/alex 200 144 user=alex agent="curl/8.5.0"
+2026-06-26T09:19:22+00:00 198.51.100.77 GET /api/admin/users 200 2048 user=alex agent="curl/8.5.0"
+2026-06-26T09:20:01+00:00 198.51.100.77 GET /api/reports/export?format=json 200 18342 user=alex agent="curl/8.5.0"
+EOF
+fi
+
+if [ ! -e /var/log/kernel-cve-radar/error.log ]; then
+  sudo tee /var/log/kernel-cve-radar/error.log >/dev/null <<'EOF'
+2026-06-26T09:17:18+00:00 WARN scanner scan_id=scan-784 cve=CVE-2025-21756 severity=HIGH msg="Installed kernel may be affected"
+2026-06-26T09:18:39+00:00 WARN authorization request_id=req-1018 user=alex role=analyst path=/api/admin/users msg="Administrative access denied"
+2026-06-26T09:19:06+00:00 ERROR authorization request_id=req-1019 user=alex old_role=analyst new_role=admin source_ip=198.51.100.77 msg="Role changed without approved change ticket"
+2026-06-26T09:19:22+00:00 CRITICAL security request_id=req-1020 user=alex role=admin source_ip=198.51.100.77 msg="Previously denied user accessed administrative endpoint"
+2026-06-26T09:20:01+00:00 CRITICAL security request_id=req-1021 user=alex source_ip=198.51.100.77 bytes=18342 msg="CVE report exported after unauthorized privilege escalation"
+EOF
+fi
+
+if [ ! -e /var/log/kernel-cve-radar/auth-events.jsonl ]; then
+  sudo tee /var/log/kernel-cve-radar/auth-events.jsonl >/dev/null <<'EOF'
+{"timestamp":"2026-06-26T09:15:03Z","event":"login_success","user":"alex","source_ip":"10.20.30.41","role":"analyst","session_id":"sess-a91f","request_id":"req-1004"}
+{"timestamp":"2026-06-26T09:18:39Z","event":"authorization_denied","user":"alex","source_ip":"198.51.100.77","role":"analyst","resource":"/api/admin/users","request_id":"req-1018"}
+{"timestamp":"2026-06-26T09:19:06Z","event":"role_changed","user":"alex","actor":"alex","source_ip":"198.51.100.77","old_role":"analyst","new_role":"admin","approved":false,"request_id":"req-1019"}
+{"timestamp":"2026-06-26T09:19:22Z","event":"authorization_granted","user":"alex","source_ip":"198.51.100.77","role":"admin","resource":"/api/admin/users","session_id":"sess-a91f","request_id":"req-1020"}
+{"timestamp":"2026-06-26T09:20:01Z","event":"sensitive_export","user":"alex","source_ip":"198.51.100.77","resource":"cve_report","records":247,"session_id":"sess-a91f","request_id":"req-1021"}
+EOF
+fi
+
+sudo chmod 0644 /var/log/kernel-cve-radar/access.log
+sudo chmod 0644 /var/log/kernel-cve-radar/error.log
+sudo chmod 0644 /var/log/kernel-cve-radar/auth-events.jsonl
+----
+
+繼續前請再次執行可讀性檢查。
+
+== 在 Edge 主機上產生 MCP SSH 金鑰
+
+Linux MCP Server 需要金鑰式 SSH 認證。在仍連線至 Edge 主機的情況下，產生一個無密碼短語的專用金鑰：
+
+[source,console,role=execute]
+----
+mkdir -p /home/lab-user/.ssh
+chmod 700 /home/lab-user/.ssh
+
+if [ ! -f /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user ]; then
+  ssh-keygen -q -t ed25519 -N '' \
+    -f /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
+    -C "rhel-mcp-lab-user@$(hostname -f)"
+fi
+----
+
+授權公鑰（避免重複新增）：
+
+[source,console,role=execute]
+----
+touch /home/lab-user/.ssh/authorized_keys
+chmod 600 /home/lab-user/.ssh/authorized_keys
+
+PUBLIC_KEY="$(
+  cat /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user.pub
+)"
+
+grep -qxF "${PUBLIC_KEY}" /home/lab-user/.ssh/authorized_keys ||
+  printf '%s\n' "${PUBLIC_KEY}" \
+    >> /home/lab-user/.ssh/authorized_keys
+----
+
+返回 Showroom 終端機：
+
+[source,console,role=execute]
+----
+exit
+----
+
+== 將私鑰複製到 Showroom 終端機
+
+從 Edge 主機複製私鑰，提示時輸入 `{edge_password}`：
+
+[source,console,role=execute]
+----
+mkdir -p /home/lab-user/.ssh
+chmod 700 /home/lab-user/.ssh
+
+scp \
+  -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts \
+  -o StrictHostKeyChecking=accept-new \
+  lab-user@"${EDGE_HOST}":/home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
+  /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
+
+chmod 600 /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
+----
+
+[NOTE]
+====
+Showroom 終端機的 `/home/lab-user` 掛載自持久性儲存空間，但其 `$HOME` 可能指向 `/data`。請使用上方所示的明確 `/home/lab-user` 路徑和臨時 known-hosts 檔案。
+====
+
+確認無密碼 SSH 及日誌存取：
+
+[source,console,role=execute]
+----
+ssh \
+  -i /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
+  -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts \
+  -o StrictHostKeyChecking=yes \
+  lab-user@"${EDGE_HOST}" \
+  'whoami; hostname; tail -n 2 /var/log/kernel-cve-radar/error.log'
+----
+
+== 建立 SSH 金鑰 Secret
+
+[source,console,role=execute]
+----
+oc create secret generic rhel-mcp-ssh-key \
+  -n "${MCP_NAMESPACE}" \
+  --from-file=id_ed25519.rhel_mcp.key=/home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
+  --dry-run=client -o yaml |
+  oc apply -f -
+----
+
+== 建立 MCP 政策
+
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`。
+
+[source,console,role=execute]
+----
+oc apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rhel-mcp-policy
+  namespace: ${MCP_NAMESPACE}
+data:
+  mcp-policy.yaml: |
+    rules:
+      - host: "${EDGE_HOST}"
+        tools: ["read_log_file"]
+        all_users: true
+        action: ssh_key
+        ssh_key:
+          path: /work/id_ed25519.rhel_mcp.key
+          user: lab-user
+EOF
+----
+
+== 部署 RHEL MCP Server
+
+`LINUX_MCP_ALLOWED_LOG_PATHS` 是一個明確的逗號分隔檔案允許清單，不代表允許整個目錄下的遞迴存取。
+
+[source,console,role=execute]
+----
+oc apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rhel-mcp
+  namespace: ${MCP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rhel-mcp
+  template:
+    metadata:
+      labels:
+        app: rhel-mcp
+    spec:
+      initContainers:
+        - name: prepare-ssh-key
+          image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              cp /secret/id_ed25519.rhel_mcp.key
+              /work/id_ed25519.rhel_mcp.key &&
+              chmod 600 /work/id_ed25519.rhel_mcp.key
+          volumeMounts:
+            - name: ssh-key-secret
+              mountPath: /secret
+              readOnly: true
+            - name: workdir
+              mountPath: /work
+      containers:
+        - name: rhel-mcp
+          image: quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest
+          imagePullPolicy: Always
+          env:
+            - name: LINUX_MCP_USER
+              value: lab-user
+            - name: LINUX_MCP_VERIFY_HOST_KEYS
+              value: "False"
+            - name: LINUX_MCP_ALLOWED_LOG_PATHS
+              value: /var/log/kernel-cve-radar/access.log,/var/log/kernel-cve-radar/error.log,/var/log/kernel-cve-radar/auth-events.jsonl
+          command: ["linux-mcp-server"]
+          args:
+            - --transport
+            - streamable_http
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --ssh-key-path
+            - /work/id_ed25519.rhel_mcp.key
+            - --user
+            - lab-user
+            - --policy-path
+            - /config/mcp-policy.yaml
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: workdir
+              mountPath: /work
+            - name: policy
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: ssh-key-secret
+          secret:
+            secretName: rhel-mcp-ssh-key
+        - name: policy
+          configMap:
+            name: rhel-mcp-policy
+        - name: workdir
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rhel-mcp
+  namespace: ${MCP_NAMESPACE}
+spec:
+  selector:
+    app: rhel-mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+EOF
+----
+
+等待伺服器就緒：
+
+[source,console,role=execute]
+----
+oc rollout status deployment/rhel-mcp \
+  -n "${MCP_NAMESPACE}" \
+  --timeout=5m
+
+oc get pods,service \
+  -n "${MCP_NAMESPACE}"
+
+oc logs \
+  -n "${MCP_NAMESPACE}" \
+  deployment/rhel-mcp \
+  --tail=50
+----
+
+image::en@modules:ROOT:rhel-mcp-rollout-ready.png[rhel-mcp Deployment rollout complete and Service ready,width=90%]
+
+您的個人 MCP 端點為：
+
+[source,text,subs=attributes+]
+----
+http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp
+----
+
+== 確認服務端點
+
+[source,console,role=execute]
+----
+curl -i \
+  "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+----
+
+一般 HTTP GET 請求通常會返回 `406 Not Acceptable`，並附帶需要 `text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
+
+== 測試 MCP 工具
+
+使用 MCP Server 的 Python 環境，透過 MCP 協定呼叫 `read_log_file`：
+
+[source,console,role=execute]
+----
+oc exec -i \
+  -n "${MCP_NAMESPACE}" \
+  deployment/rhel-mcp -- \
+  env EDGE_HOST="${EDGE_HOST}" \
+  /opt/venvs/mcp/bin/python - <<'PY'
+import asyncio
+import os
+from fastmcp import Client
+
+HOST = os.environ["EDGE_HOST"]
+LOGS = [
+    "/var/log/kernel-cve-radar/access.log",
+    "/var/log/kernel-cve-radar/error.log",
+    "/var/log/kernel-cve-radar/auth-events.jsonl",
+]
+
+async def main():
+    async with Client("http://127.0.0.1:8000/mcp") as client:
+        for log_path in LOGS:
+            result = await client.call_tool(
+                "read_log_file",
+                {
+                    "host": HOST,
+                    "log_path": log_path,
+                    "lines": 3,
+                },
+            )
+            print(f"=== {log_path} ===")
+            print(result.content[0].text)
+
+asyncio.run(main())
+PY
+----
+
+三個呼叫均須成功回傳日誌內容。
+
+image::en@modules:ROOT:rhel-mcp-tool-log-results.png[RHEL MCP read_log_file results for the allowed application logs,width=90%]
+
+== 執行否定測試
+
+`/var/log/messages` 不在允許清單中：
+
+[source,console,role=execute]
+----
+oc exec -i \
+  -n "${MCP_NAMESPACE}" \
+  deployment/rhel-mcp -- \
+  env EDGE_HOST="${EDGE_HOST}" \
+  /opt/venvs/mcp/bin/python - <<'PY'
+import asyncio
+import os
+from fastmcp import Client
+
+async def main():
+    async with Client("http://127.0.0.1:8000/mcp") as client:
+        try:
+            await client.call_tool(
+                "read_log_file",
+                {
+                    "host": os.environ["EDGE_HOST"],
+                    "log_path": "/var/log/messages",
+                    "lines": 3,
+                },
+            )
+        except Exception as exc:
+            print(exc)
+
+asyncio.run(main())
+PY
+----
+
+預期結果：
+
+[listing]
+....
+Access to log file '/var/log/messages' is not allowed.
+....
+
+image::en@modules:ROOT:rhel-mcp-negative-allowlist.png[RHEL MCP blocking /var/log/messages because it is outside the log allowlist,width=90%]
+
+////
+== 疑難排解
+
+=== SSH 無法在 `/data` 下寫入
+
+使用明確路徑和可寫入的 known-hosts 檔案：
+
+[source,console,role=execute]
+----
+-o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts
+----
+
+=== `oc project` 回報 `mkdir /data: permission denied`
+
+保持 `MCP_NAMESPACE` 已設定，並在每個 `oc` 指令中以 `-n` 傳入。不需要切換專案。
+
+=== MCP 回報 `SSH connection closed`
+
+重新啟動部署以清除過期的 MCP 或 SSH 工作階段：
+
+[source,console,role=execute]
+----
+oc rollout restart deployment/rhel-mcp \
+  -n "${MCP_NAMESPACE}"
+
+oc rollout status deployment/rhel-mcp \
+  -n "${MCP_NAMESPACE}" \
+  --timeout=5m
+----
+
+=== 查看伺服器日誌
+
+[source,console,role=execute]
+----
+oc logs \
+  -n "${MCP_NAMESPACE}" \
+  deployment/rhel-mcp \
+  --tail=100
+----
+////

@@ -1,0 +1,155 @@
+:imagesdir: ../assets/images
+
+[#analysis-logs]
+= 分析 Edge 應用程式日誌
+
+== 在 Cline 中設定 RHEL MCP
+
+當 Cline 在 OpenShift Dev Spaces 中運行時，使用您個人的叢集內部 RHEL MCP Service URL 進行設定。
+
+. 開啟 Cline 並選擇 *MCP*。
++
+image::en@modules:ROOT:cline-select-mcp.png[Cline MCP button,width=80%]
+
+. 輸入以下值：
++
+[cols="1,2"]
+|===
+|欄位 |值
+
+|Server Name
+|`rhel-mcp`
+
+|Server URL
+|`http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp`
+
+|Transport Type
+|`streamableHttp`
+|===
++
+image::en@modules:ROOT:cline-mcp-server-settings.png[Cline MCP Server settings,width=80%]
+
+. 選擇 *Configure*。
++
+image::en@modules:ROOT:cline-mcp-configure-button.png[Cline MCP Configure button,width=80%]
+
+. 確認生成的設定：
++
+[source,json,role=execute,subs=attributes+]
+----
+{
+  "mcpServers": {
+    "rhel-mcp": {
+      "url": "http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp",
+      "type": "streamableHttp",
+      "disabled": false,
+      "autoApprove": [
+        "read_log_file"
+      ]
+    }
+  }
+}
+----
++
+
+若 Cline 已在運行，請在儲存 MCP 設定後重新載入 Dev Spaces 視窗或重新啟動 Cline 工作階段。
+
+== 分析三個應用程式日誌
+
+使用確切的 MCP 工具名稱和參數名稱。`read_log_file` 需要使用 `log_path`，而非 `path`。
+
+將以下提示貼入 Cline：
+
+[source,text,role=execute,subs=attributes+]
+----
+Use the MCP tool rhel-mcp__read_log_file to read these files from
+{edge_host}:
+
+1. /var/log/kernel-cve-radar/access.log
+2. /var/log/kernel-cve-radar/error.log
+3. /var/log/kernel-cve-radar/auth-events.jsonl
+
+For every tool call, use:
+{
+  "host": "{edge_host}",
+  "log_path": "<one of the paths above>",
+  "lines": 200
+}
+
+Do not use read_file.
+Do not use local file reading.
+Do not guess another host or path.
+
+Correlate the timestamps, user, source IP, request IDs, role changes, denied
+requests, successful administrative access, CVE findings, and data export.
+Return a concise incident timeline, severity, impact, and recommended actions.
+----
+
+image::en@modules:ROOT:cline-rhl-mcp-prompt.png[Cline RHEL MCP prompt,width=80%]
+
+回應應識別三個日誌中的重要事件序列，包括未授權的權限變更及其後的敏感報告匯出。
+
+image::en@modules:ROOT:cline-rhel-mcp-response.png[Cline RHEL MCP response,width=80%]
+
+== 測試日誌允許清單
+
+將以下提示貼入 Cline：
+
+[source,text,role=execute,subs=attributes+]
+----
+Call exactly this MCP tool and arguments:
+
+Tool: rhel-mcp__read_log_file
+Arguments:
+{
+  "host": "{edge_host}",
+  "log_path": "/var/log/messages",
+  "lines": 20
+}
+
+Do not use another tool or path.
+----
+
+此請求必須失敗，因為 `/var/log/messages` 不在三個允許的應用程式日誌之列。
+
+image::en@modules:ROOT:cline-rhel-mcp-allowlist-failure.png[Cline RHEL MCP allowlist failure,width=80%]
+
+== 疑難排解
+
+=== Cline 使用 `path` 而非 `log_path`
+
+正確的工具和參數如下：
+
+[source,json,role=execute,subs=attributes+]
+----
+{
+  "host": "{edge_host}",
+  "log_path": "/var/log/kernel-cve-radar/error.log",
+  "lines": 200
+}
+----
+
+=== Cline 使用本地檔案讀取
+
+請明確指定工具名稱：
+
+[listing,role=execute]
+....
+rhel-mcp__read_log_file
+....
+
+請勿僅參照 RHOAI 顯示名稱 `RHEL-MCP-Server`；Cline 使用其 MCP 設定中設定的伺服器鍵值。
+
+=== MCP 連線正常但 SSH 中斷
+
+從 Showroom 終端機重新啟動您的個人 MCP 部署：
+
+[source,console,role=execute,subs=attributes+]
+----
+oc rollout restart deployment/rhel-mcp \
+  -n showroom-pgvrq-{user}
+
+oc rollout status deployment/rhel-mcp \
+  -n showroom-pgvrq-{user} \
+  --timeout=5m
+----

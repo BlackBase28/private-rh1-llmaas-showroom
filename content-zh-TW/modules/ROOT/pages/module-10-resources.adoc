@@ -1,0 +1,49 @@
+:imagesdir: ../assets/images
+
+[#resources]
+= 延伸學習資源
+
+以下資源供您繼續探索本工作坊使用的工具和模式。
+
+== Red Hat AI 與平台文件
+
+* https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/latest[Red Hat OpenShift AI 文件]
+* https://docs.redhat.com/en/documentation/red_hat_openshift_container_platform/latest[Red Hat OpenShift 文件]
+* https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/latest[Red Hat Ansible Automation Platform 文件]
+* https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/latest[Red Hat Enterprise Linux 文件]
+* https://developers.redhat.com/products/openshift-dev-spaces/overview[Red Hat OpenShift Dev Spaces 概覽]
+
+== AI 代理、MCP 與開發者工具
+
+* https://llama-stack.readthedocs.io/en/latest/[Llama Stack 文件]
+* https://modelcontextprotocol.io/overview[Model Context Protocol 概覽]
+* https://github.com/modelcontextprotocol[Model Context Protocol GitHub 組織]
+* https://github.com/cline/cline[Cline GitHub 儲存庫]
+* https://docs.cline.bot/[Cline 文件]
+
+== 工作坊中可重複運用的設計概念
+
+本實驗使用了幾個可重複使用的設計理念，可適用於實際的企業工作流程：
+
+* 使用共用模型端點，統一存取控制、成本管理和運維能見度。
+* 保持工具存取範圍的最小化。MCP 伺服器應只公開工作流程所需的資料和操作。
+* 將調查與修復分離。唯讀分析可以比部署或變更系統的操作擁有更寬鬆的權限。
+* 在接受生成的程式碼、設定或自動化變更前，要求人工審查。
+* 在組織已信任的系統中保留稽核軌跡，例如 Git、AAP 工作歷史、OpenShift 事件、可觀測性工具和事件處理頻道。
+
+== 建議的後續練習
+
+* 新增另一個唯讀 MCP 工具，並定義其允許存取的資料範圍。
+* 使用更嚴格的事件報告格式來擴充日誌分析提示。
+* 在執行修復流程前，為 portal 應用程式新增更多測試。
+* 將範例通知頻道替換為您團隊的事件回應頻道。
+* 使用 OpenShift GitOps、AAP 或兩者，比較相同的修復工作流程。
+
+== 相關工作坊章節
+
+* xref:module-01-introduction.adoc#maas_introduction[模組 1：模型即服務]
+* xref:module-02-agentic.adoc#agentic-ai[模組 2：用於系統管理的 AI 代理]
+* xref:module-04-rhelmcp.adoc#install-mcp[模組 4：RHEL MCP 安裝與驗證]
+* xref:module-05-code.adoc#code-asst[模組 5：Cline 與 Dev Spaces 設定]
+* xref:module-07-analysis.adoc#analysis-logs[模組 7：Edge 日誌分析]
+* xref:module-08-remediate.adoc#remediation-and-redeploy[模組 8：修復與重新部署挑戰]
