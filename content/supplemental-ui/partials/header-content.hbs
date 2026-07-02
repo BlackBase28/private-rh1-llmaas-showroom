@@ -30,19 +30,20 @@
           ;(() => {
             const path = window.location.pathname
             const switcher = document.querySelector('.language-switcher')
-            if (!/\/(index|module-01-introduction)\.html$/.test(path)) {
+            if (!/\/modules\/(en|zh-TW)\//.test(path)) {
               switcher.hidden = true
               return
             }
             const switchPath = (target) => {
-              if (path.includes('/modules/zh-TW/')) return path.replace('/modules/zh-TW/', `/modules/${target}/`)
-              if (path.includes('/modules/en/')) return path.replace('/modules/en/', `/modules/${target}/`)
-              return target === 'zh-TW'
-                ? path.replace(/\/?$/, '/modules/zh-TW/module-01-introduction.html')
-                : path.replace(/\/?$/, '/modules/en/module-01-introduction.html')
+              const targetPath = path.replace(/\/modules\/(en|zh-TW)\//, `/modules/${target}/`)
+              return `${targetPath}${window.location.hash}`
             }
             document.querySelectorAll('.language-switch-link').forEach((link) => {
               link.href = switchPath(link.dataset.languageTarget)
+              link.addEventListener('click', (event) => {
+                event.preventDefault()
+                window.location.href = switchPath(link.dataset.languageTarget)
+              })
             })
           })()
         </script>

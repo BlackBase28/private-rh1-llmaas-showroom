@@ -1,7 +1,56 @@
 :imagesdir: ../assets/images
 
-= 企業級自動修復 AI Agent
+= 企業級邊緣自動修復 AI Agent
 
-這是繁體中文多語系試作版本。目前僅翻譯 Module 1，用來驗證 Antora 版本、導覽與語言切換體驗。
+== 歡迎來到 Workshop
+這不只是 AI 工具介紹，而是一段橫跨平台維運、應用程式開發與 Edge 部署的企業級修復實作旅程。
 
-* xref:module-01-introduction.adoc#maas_introduction[前往模組 1：簡介]
+企業應用程式可能分散執行在各種 RHEL 環境中，包括製造現場、金融服務據點、零售門市、電信站點與遠端技術基礎設施。這些環境需要安全、可靠且可稽核的流程，來支援問題排查與軟體更新。
+
+在這個 hands-on workshop 中，你會在兩個主要角色之間切換：
+
+* 作為 **site reliability engineer (SRE) 或 DevOps practitioner**，你將準備 Models-as-a-Service、RHOAI Playground、MCP servers、Grafana，以及對遠端 RHEL 或 Edge 環境的受控存取。
+
+* 作為 **Developer**，你將在 OpenShift Dev Spaces 中使用由 Cline 驅動的 AI Development Agent，分析遠端應用程式日誌、產生修復建議、檢視程式碼變更，並完成受控的重新部署。
+
+完成 workshop 後，你將了解 RHOAI、MCP、GitHub、Argo CD、Ansible Automation Platform 與 RHEL image mode 如何協同運作，交付一套受控、可驗證且可稽核的企業級修復流程。
+
+== Workshop Agenda
+
+=== Part 1: SRE 或 DevOps practitioner
+
+==== **Module 1:** 從基礎設施複雜度到 Models-as-a-Service
+探索傳統 GPU 基礎設施在資源配置、重複模型部署與成本治理上的挑戰。了解 Models-as-a-Service 如何提供集中式模型管理、安全 API 存取、共享資源與對開發者友善的體驗。
+
+==== **Module 2:** 使用 Agentic AI 進行系統管理
+使用 RHOAI Playground、Llama Stack 與 MCP servers 檢查 OpenShift 資源、與協作服務互動，並體驗 Agentic AI 如何協助系統管理工作。
+
+==== **Module 3:** 使用量分析與報告
+使用 Grafana dashboards 觀察模型使用量、平台活動與資源利用率。了解企業 AI 服務的營運狀態、成本與治理需求。
+
+==== **Module 4:** 安裝並驗證 RHEL MCP
+在 RHOAI 與分散式 RHEL 或 Edge 環境之間建立安全連線。部署並註冊 RHEL MCP Server，讓已授權的 AI clients 能夠存取核准的遠端系統資訊與應用程式資料。
+
+=== Part 2: Developer
+
+==== **Module 5:** 建立 AI 輔助開發環境
+開啟 OpenShift Dev Spaces workspace、安裝 Cline，並將由 Cline 驅動的 AI Development Agent 連接到 RHOAI Models-as-a-Service endpoint。
+
+==== **Module 6:** Try It Yourself
+在 AI 輔助下建立一個簡單應用程式。練習產生、檢視、測試與改善程式碼，並熟悉 AI Development Agent 的工作流程。
+
+==== **Module 7:** 分析 Edge 應用程式日誌
+使用 AI Development Agent 與 RHEL MCP，安全地從分散式 Edge 環境擷取應用程式日誌。分析錯誤與營運風險、找出根本原因，並為受影響的 Edge 應用程式提出適當修復方式。
+
+==== **Module 8 — 挑戰 / 加碼:** 修復並重新部署
+將你學到的內容應用在選修的進階挑戰中。使用 AI Development Agent 產生程式碼或 manifest 變更、檢視並測試修復建議，然後將核准的變更 commit 到 GitHub。最後透過 Argo CD、Ansible Automation Platform 與 RHEL image mode，將更新部署到目標 RHEL 或 Edge 環境並完成驗證。
+
+[IMPORTANT]
+====
+Module 8 是選修挑戰與 bonus exercise。若時間允許，或你想探索完整端到端企業級修復流程，可以完成這個模組。
+====
+
+== Workshop 環境
+這個 workshop 執行在共享的 OpenShift cluster 上。每位參與者都會取得個別使用者帳號，以及一個 OpenShift Dev Spaces 開發環境。
+
+基礎模型與部分平台服務會由所有參與者共用。開發活動、RHEL targets 與修復流程則會依照 Lab 環境進行隔離與控管。
