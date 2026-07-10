@@ -33,7 +33,7 @@ Set the namespace used by all commands:
 
 [source,console,role=execute,subs=attributes+]
 ----
-export MCP_NAMESPACE="showroom-pgvrq-{user}"
+export MCP_NAMESPACE="showroom-{guid}-{user}"
 export EDGE_HOST="{edge_host}"
 ----
 
@@ -379,7 +379,7 @@ Your personal MCP endpoint is:
 
 [source,text,subs=attributes+]
 ----
-http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp
+http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp
 ----
 
 == Verify the Service Endpoint

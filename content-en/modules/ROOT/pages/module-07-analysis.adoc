@@ -23,7 +23,7 @@ image::cline-select-mcp.png[Cline MCP button,width=80%]
 |`rhel-mcp`
 
 |Server URL
-|`http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp`
+|`http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp`
 
 |Transport Type
 |`streamableHttp`
@@ -42,7 +42,7 @@ image::cline-mcp-configure-button.png[Cline MCP Configure button,width=80%]
 {
   "mcpServers": {
     "rhel-mcp": {
-      "url": "http://rhel-mcp.showroom-pgvrq-{user}.svc.cluster.local:8000/mcp",
+      "url": "http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp",
       "type": "streamableHttp",
       "disabled": false,
       "autoApprove": [
@@ -155,9 +155,9 @@ From the Showroom terminal, restart your personal MCP deployment:
 [source,console,role=execute,subs=attributes+]
 ----
 oc rollout restart deployment/rhel-mcp \
-  -n showroom-pgvrq-{user}
+  -n showroom-{guid}-{user}
 
 oc rollout status deployment/rhel-mcp \
-  -n showroom-pgvrq-{user} \
+  -n showroom-{guid}-{user} \
   --timeout=5m
 ----
