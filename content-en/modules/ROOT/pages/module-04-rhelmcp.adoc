@@ -177,7 +177,7 @@ oc create secret generic rhel-mcp-ssh-key \
 
 == Create the MCP Policy
 
-The policy allows only `read_log_file` calls to your assigned Edge host.
+The policy allows only `read_log_file`、`get_journal_logs` and `get_service_status` calls to your assigned Edge host.
 
 [source,console,role=execute]
 ----
@@ -191,7 +191,7 @@ data:
   mcp-policy.yaml: |
     rules:
       - host: "${EDGE_HOST}"
-        tools: ["read_log_file"]
+        tools: ["read_log_file", "get_journal_logs", "get_service_status"]
         all_users: true
         action: ssh_key
         ssh_key:
