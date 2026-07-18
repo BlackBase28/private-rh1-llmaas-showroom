@@ -155,7 +155,7 @@ oc create secret generic rhel-mcp-ssh-key \
 
 == 建立 MCP 政策
 
-此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`。
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs`和`get_service_status`。
 
 [source,console,role=execute]
 ----
@@ -169,7 +169,7 @@ data:
   mcp-policy.yaml: |
     rules:
       - host: "${EDGE_HOST}"
-        tools: ["read_log_file"]
+        tools: ["read_log_file", "get_journal_logs", "get_service_status"]
         all_users: true
         action: ssh_key
         ssh_key:
