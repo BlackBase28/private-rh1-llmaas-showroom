@@ -80,121 +80,62 @@ done
 
 預期存在的檔案為 `access.log`、`error.log` 和 `auth-events.jsonl`。
 
-=== 當 Edge 主機為空時建立模擬日誌
+== 在 Showroom 終端機產生 MCP SSH 金鑰
 
-若應用程式已建立全部三個日誌檔，請跳過此節。否則，在 Edge 主機上執行以下指令（現有檔案不會被覆蓋）：
+Linux MCP Server 需要使用 SSH 金鑰連線至 Edge 主機。私鑰將建立於 Showroom 終端機，後續再存入 OpenShift Secret 並掛載至 RHEL MCP Pod；Edge 主機只需要接收對應的公鑰。
 
-[source,console,role=execute]
-----
-sudo install -d -o root -g root -m 0755 \
-  /var/log/kernel-cve-radar
-
-if [ ! -e /var/log/kernel-cve-radar/access.log ]; then
-  sudo tee /var/log/kernel-cve-radar/access.log >/dev/null <<'EOF'
-2026-06-26T09:14:18+00:00 10.20.30.41 POST /api/login 401 96 user=alex agent="Mozilla/5.0"
-2026-06-26T09:15:03+00:00 10.20.30.41 POST /api/login 200 312 user=alex agent="Mozilla/5.0"
-2026-06-26T09:18:39+00:00 198.51.100.77 GET /api/admin/users 403 110 user=alex agent="curl/8.5.0"
-2026-06-26T09:19:06+00:00 198.51.100.77 POST /api/admin/roles/alex 200 144 user=alex agent="curl/8.5.0"
-2026-06-26T09:19:22+00:00 198.51.100.77 GET /api/admin/users 200 2048 user=alex agent="curl/8.5.0"
-2026-06-26T09:20:01+00:00 198.51.100.77 GET /api/reports/export?format=json 200 18342 user=alex agent="curl/8.5.0"
-EOF
-fi
-
-if [ ! -e /var/log/kernel-cve-radar/error.log ]; then
-  sudo tee /var/log/kernel-cve-radar/error.log >/dev/null <<'EOF'
-2026-06-26T09:17:18+00:00 WARN scanner scan_id=scan-784 cve=CVE-2025-21756 severity=HIGH msg="Installed kernel may be affected"
-2026-06-26T09:18:39+00:00 WARN authorization request_id=req-1018 user=alex role=analyst path=/api/admin/users msg="Administrative access denied"
-2026-06-26T09:19:06+00:00 ERROR authorization request_id=req-1019 user=alex old_role=analyst new_role=admin source_ip=198.51.100.77 msg="Role changed without approved change ticket"
-2026-06-26T09:19:22+00:00 CRITICAL security request_id=req-1020 user=alex role=admin source_ip=198.51.100.77 msg="Previously denied user accessed administrative endpoint"
-2026-06-26T09:20:01+00:00 CRITICAL security request_id=req-1021 user=alex source_ip=198.51.100.77 bytes=18342 msg="CVE report exported after unauthorized privilege escalation"
-EOF
-fi
-
-if [ ! -e /var/log/kernel-cve-radar/auth-events.jsonl ]; then
-  sudo tee /var/log/kernel-cve-radar/auth-events.jsonl >/dev/null <<'EOF'
-{"timestamp":"2026-06-26T09:15:03Z","event":"login_success","user":"alex","source_ip":"10.20.30.41","role":"analyst","session_id":"sess-a91f","request_id":"req-1004"}
-{"timestamp":"2026-06-26T09:18:39Z","event":"authorization_denied","user":"alex","source_ip":"198.51.100.77","role":"analyst","resource":"/api/admin/users","request_id":"req-1018"}
-{"timestamp":"2026-06-26T09:19:06Z","event":"role_changed","user":"alex","actor":"alex","source_ip":"198.51.100.77","old_role":"analyst","new_role":"admin","approved":false,"request_id":"req-1019"}
-{"timestamp":"2026-06-26T09:19:22Z","event":"authorization_granted","user":"alex","source_ip":"198.51.100.77","role":"admin","resource":"/api/admin/users","session_id":"sess-a91f","request_id":"req-1020"}
-{"timestamp":"2026-06-26T09:20:01Z","event":"sensitive_export","user":"alex","source_ip":"198.51.100.77","resource":"cve_report","records":247,"session_id":"sess-a91f","request_id":"req-1021"}
-EOF
-fi
-
-sudo chmod 0644 /var/log/kernel-cve-radar/access.log
-sudo chmod 0644 /var/log/kernel-cve-radar/error.log
-sudo chmod 0644 /var/log/kernel-cve-radar/auth-events.jsonl
-----
-
-繼續前請再次執行可讀性檢查。
-
-== 在 Edge 主機上產生 MCP SSH 金鑰
-
-Linux MCP Server 需要金鑰式 SSH 認證。在仍連線至 Edge 主機的情況下，產生一個無密碼短語的專用金鑰：
-
-[source,console,role=execute]
-----
-mkdir -p /home/lab-user/.ssh
-chmod 700 /home/lab-user/.ssh
-
-if [ ! -f /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user ]; then
-  ssh-keygen -q -t ed25519 -N '' \
-    -f /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
-    -C "rhel-mcp-lab-user@$(hostname -f)"
-fi
-----
-
-授權公鑰（避免重複新增）：
-
-[source,console,role=execute]
-----
-touch /home/lab-user/.ssh/authorized_keys
-chmod 600 /home/lab-user/.ssh/authorized_keys
-
-PUBLIC_KEY="$(
-  cat /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user.pub
-)"
-
-grep -qxF "${PUBLIC_KEY}" /home/lab-user/.ssh/authorized_keys ||
-  printf '%s\n' "${PUBLIC_KEY}" \
-    >> /home/lab-user/.ssh/authorized_keys
-----
-
-返回 Showroom 終端機：
+若目前仍連線在 Edge 主機，先返回 Showroom 終端機：
 
 [source,console,role=execute]
 ----
 exit
 ----
 
-== 將私鑰複製到 Showroom 終端機
-
-從 Edge 主機複製私鑰，提示時輸入 `{edge_password}`：
+在 Showroom 終端機建立專用 SSH 金鑰。此實驗使用無密碼短語金鑰，讓 RHEL MCP 能以非互動方式連線：
 
 [source,console,role=execute]
 ----
 mkdir -p /home/lab-user/.ssh
 chmod 700 /home/lab-user/.ssh
 
-scp \
+MCP_SSH_KEY=/home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
+
+if [ ! -f "${MCP_SSH_KEY}" ]; then
+  ssh-keygen -q -t ed25519 -N '' \
+    -f "${MCP_SSH_KEY}" \
+    -C "rhel-mcp-lab-user@showroom"
+fi
+
+chmod 600 "${MCP_SSH_KEY}"
+chmod 644 "${MCP_SSH_KEY}.pub"
+----
+
+將公鑰安裝至 Edge 主機的 `lab-user` 帳號。提示時輸入 `{edge_password}`：
+
+[source,console,role=execute]
+----
+ssh-copy-id \
+  -i "${MCP_SSH_KEY}.pub" \
   -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts \
   -o StrictHostKeyChecking=accept-new \
-  lab-user@"${EDGE_HOST}":/home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
-  /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
-
-chmod 600 /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user
+  lab-user@"${EDGE_HOST}"
 ----
 
 [NOTE]
 ====
 Showroom 終端機的 `/home/lab-user` 掛載自持久性儲存空間，但其 `$HOME` 可能指向 `/data`。請使用上方所示的明確 `/home/lab-user` 路徑和臨時 known-hosts 檔案。
+
+私鑰應保留在 Showroom／MCP 端。
 ====
 
-確認無密碼 SSH 及日誌存取：
+確認 RHEL MCP 專用金鑰可在不輸入密碼的情況下登入，並確認 `lab-user` 能讀取應用程式日誌：
 
 [source,console,role=execute]
 ----
 ssh \
-  -i /home/lab-user/.ssh/id_ed25519.rhel_mcp_lab_user \
+  -i "${MCP_SSH_KEY}" \
+  -o IdentitiesOnly=yes \
+  -o BatchMode=yes \
   -o UserKnownHostsFile=/tmp/rhel-mcp-known-hosts \
   -o StrictHostKeyChecking=yes \
   lab-user@"${EDGE_HOST}" \
@@ -214,7 +155,7 @@ oc create secret generic rhel-mcp-ssh-key \
 
 == 建立 MCP 政策
 
-此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`。
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs`和`get_service_status`。
 
 [source,console,role=execute]
 ----
@@ -228,7 +169,7 @@ data:
   mcp-policy.yaml: |
     rules:
       - host: "${EDGE_HOST}"
-        tools: ["read_log_file"]
+        tools: ["read_log_file", "get_journal_logs", "get_service_status"]
         all_users: true
         action: ssh_key
         ssh_key:
