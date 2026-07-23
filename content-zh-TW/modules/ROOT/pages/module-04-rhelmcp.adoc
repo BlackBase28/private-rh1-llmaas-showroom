@@ -8,6 +8,8 @@
 * `/var/log/kernel-cve-radar/access.log`
 * `/var/log/kernel-cve-radar/error.log`
 * `/var/log/kernel-cve-radar/auth-events.jsonl`
+* `/var/log/httpd/access_log`
+* `/var/log/httpd/error_log`
 
 您分配的 Edge 主機為 `{edge_host}`，SSH 使用者為 `lab-user`，初始 SSH 密碼為 `{edge_password}`。
 
