@@ -225,7 +225,7 @@ spec:
             - name: LINUX_MCP_VERIFY_HOST_KEYS
               value: "False"
             - name: LINUX_MCP_ALLOWED_LOG_PATHS
-              value: /var/log/kernel-cve-radar/access.log,/var/log/kernel-cve-radar/error.log,/var/log/kernel-cve-radar/auth-events.jsonl
+              value: /var/log/kernel-cve-radar/access.log,/var/log/kernel-cve-radar/error.log,/var/log/kernel-cve-radar/auth-events.jsonl,/var/log/httpd/access_log,/var/log/httpd/error_log
           command: ["linux-mcp-server"]
           args:
             - --transport
@@ -276,6 +276,15 @@ spec:
     - name: http
       port: 8000
       targetPort: http
+data:
+  config: |
+    Host *
+        ServerAliveInterval 30
+        ServerAliveCountMax 3
+        TCPKeepAlive yes
+        ConnectTimeout 15
+        BatchMode yes
+        IdentitiesOnly yes
 EOF
 ----
 
