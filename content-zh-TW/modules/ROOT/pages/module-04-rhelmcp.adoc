@@ -80,6 +80,43 @@ done
 
 預期存在的檔案為 `access.log`、`error.log` 和 `auth-events.jsonl`。
 
+== 準備 Edge 主機的 SSH 授權目錄
+
+後續的 RHEL MCP Server 會使用 SSH 金鑰登入 Edge 主機。執行 `ssh-copy-id` 前，必須先確認Edge 主機 `lab-user` 能夠寫入自己的 `~/.ssh/authorized_keys`。
+
+目前仍在 Edge 主機上時，執行：
+
+[source,console,role=execute]
+----
+LAB_USER=lab-user
+LAB_HOME=$(getent passwd "${LAB_USER}" | cut -d: -f6)
+LAB_GROUP=$(id -gn "${LAB_USER}")
+
+sudo mkdir -p "${LAB_HOME}/.ssh"
+sudo touch "${LAB_HOME}/.ssh/authorized_keys"
+
+sudo chown "${LAB_USER}:${LAB_GROUP}" \
+  "${LAB_HOME}/.ssh" \
+  "${LAB_HOME}/.ssh/authorized_keys"
+
+sudo chmod 700 "${LAB_HOME}/.ssh"
+sudo chmod 600 "${LAB_HOME}/.ssh/authorized_keys"
+
+sudo restorecon -RF "${LAB_HOME}/.ssh"
+
+ls -ldZ \
+  "${LAB_HOME}/.ssh" \
+  "${LAB_HOME}/.ssh/authorized_keys"
+----
+
+確認擁有者為 `lab-user`，權限分別為：
+
+[source,text]
+----
+.ssh                 700
+authorized_keys      600
+----
+
 == 在 Showroom 終端機產生 MCP SSH 金鑰
 
 Linux MCP Server 需要使用 SSH 金鑰連線至 Edge 主機。私鑰將建立於 Showroom 終端機，後續再存入 OpenShift Secret 並掛載至 RHEL MCP Pod；Edge 主機只需要接收對應的公鑰。
