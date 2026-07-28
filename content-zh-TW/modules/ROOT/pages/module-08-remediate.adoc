@@ -1,268 +1,854 @@
 :imagesdir: ../assets/images
+:page-aliases: main@modules:ROOT:module-08-remediate.adoc
 
-[#remediation-and-redeploy]
-= 挑戰 / 加碼：修復並重新部署
+[#event-driven-ai-remediation]
+= 使用 EDA 與 AI 完成自動修復
 
-在本實驗中，您將調查並修復自己 OpenShift 工作負載中的安全事件。
+_Module 08 — Event-Driven AI Remediation_
 
-應用程式本身運作正常，但授權機制已損壞：一般使用者可以存取 `/admin`。
+在前面的模組中，您已經體驗 AI 的各種應用，包括建置 RHEL MCP，並測試讀取遠端 RHEL 主機上的應用程式日誌。
+
+在本模組中，您將把前面建立的 AI 與 RHEL MCP 能力整合至 Ansible Automation Platform。整體事件驅動修復鏈為「事件產生 → Event Forwarder → EDA Rulebook → AI Analysis + RHEL MCP → Governed Workflow + 人工核准 → 驗證與恢復」。當一般使用者成功開啟不應存取的管理頁面時，事件會沿著這條流程自動傳遞：EDA 依 Rulebook 啟動 AI Analysis，AI 蒐集證據並提出受控的修復建議，最後由 AAP Workflow 在人工核准後完成網頁修復與驗證。
+
+image::en@modules:ROOT:AAP_Architecture.png[受控的網頁修復流程架構,width=90%]
+
+[NOTE]
+====
+本實驗所需的 Organization、Inventory、Credential、Project、Job Template、Workflow Job Template、Event Stream 與 Rulebook Activation，均已於課前建立。仍有少數設定需要由學員完成，請依照本模組的步驟逐項操作。
+====
 
 == 實驗目標
 
-您將完成一個企業級的 AI 輔助修復流程：
+* 登入個人的 Ansible Automation Platform 環境。
+* 確認 AAP 上預先建立的自動化資源。
+* 從 AAP 部署事件轉送服務。
+* 建立 AI Model Credential。
+* 設定 AI Analysis 使用的 RHEL MCP Endpoint 與 AI Model Endpoint。
+* 建立受控的網站修復 Workflow。
+* 透過網頁操作產生 Broken Access Control 事件。
+* 觀察 EDA 啟動 AI Analysis。
+* 檢視 AI 蒐集的證據與修復決策。
+* 核准並執行受控的網頁修復 Workflow。
+* 驗證一般使用者已無法存取管理頁面。
 
-* 使用 Red Hat OpenShift AI 和 MCP 工具調查事件
-* 使用 OpenShift Dev Spaces 中的 Cline 修復應用程式程式碼
-* 在部署前審查生成的程式碼差異
-* 觸發已核准的 Ansible Automation Platform 修復工作
-* 驗證一般使用者被拒絕存取，管理員可正常存取
+== Workshop 實作流程
+
+前面的架構圖已說明此自動化修復流程如何從事件一路走到修復與驗證。以下將 17 個操作步驟整理成六個實作階段，並在每個步驟標示所屬階段。真正需要修改設定的只有步驟 7～10，共四項實作設定；其餘步驟主要是確認既有資源、執行已建立的 Template、開啟功能、觸發事件或觀察結果。
 
 
-////
-== 您的環境
-
-每位學員都有一個獨立的目標工作負載：
-
-[listing,subs=attributes+]
-----
-Namespace: tam-{user}
-Application: portal-{user}
-Route: https://portal-{user}.{openshift_cluster_ingress_domain}
-----
-
-測試憑證：
-
-[cols="1,1,1"]
+[cols="1,3,5,2",options="header"]
 |===
-|角色 |使用者名稱 |密碼
+|步驟
+|階段
+|內容
+|操作方式
+|1
+|階段 1｜環境與資源確認
+|登入 Kernel CVE Radar 網站
+|登入 / 查看
+|2
+|階段 1｜環境與資源確認
+|登入 Ansible Automation Platform
+|登入 / 查看
+|3
+|階段 1｜環境與資源確認
+|確認預先建立的自動化資源
+|確認
+|4
+|階段 2｜事件監控與 EDA 準備
+|Event Forwarder 的作用與部署
+|執行 Template
+|5
+|階段 2｜事件監控與 EDA 準備
+|確認 Event Stream
+|確認事件接收
+|6
+|階段 2｜事件監控與 EDA 準備
+|確認 Rulebook Activation
+|確認 / 啟用
+|7
+|階段 3｜AI 分析準備
+|建立 AI Model Credential
+|實作設定 1
+|8
+|階段 3｜AI 分析準備
+|設定 AI Analysis 的 Model 與 RHEL MCP Endpoint
+|實作設定 2
+|9
+|階段 4｜受控修復準備
+|設定告警通知
+|實作設定 3
+|10
+|階段 4｜受控修復準備
+|建立網頁修復與告警流程
+|實作設定 4
+|11
+|階段 4｜受控修復準備
+|開啟 Event Stream 事件轉送功能
+|啟用
+|12
+|階段 5｜事件分析與核准
+|透過網頁產生安全事件
+|觸發
+|13
+|階段 5｜事件分析與核准
+|觀察 EDA 接收事件
+|觀察
+|14
+|階段 5｜事件分析與核准
+|檢視 AI Analysis
+|觀察
+|15
+|階段 5｜事件分析與核准
+|核准修復 Workflow
+|核准
+|16
+|階段 6｜修復與驗證
+|觀察 Workflow 執行修復
+|觀察
+|17
+|階段 6｜修復與驗證
+|驗證修復結果
+|驗證
+|===
 
-|一般使用者
-|user
-|user123
+== 1. 登入 Kernel CVE Radar 網站
 
-|管理員
+*所屬階段：階段 1｜環境與資源確認*
+
+開啟您的 Kernel CVE Radar 網站：
+
+[source,text,subs=attributes+]
+----
+https://{edge_host}
+----
+
+使用以下帳號登入：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|值
+|使用者名稱
+|user1
+|密碼
+|User1@tday
+|===
+
+image::en@modules:ROOT:cve-radar-home.png[Kernel CVE Radar 登入頁面,width=80%]
+
+== 2. 登入 Ansible Automation Platform
+
+*所屬階段：階段 1｜環境與資源確認*
+
+開啟您的 Ansible Automation Platform：
+
+[source,text,subs=attributes+]
+----
+https://my-aap-aap.{openshift_cluster_ingress_domain}
+----
+
+使用以下帳號登入：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|值
+|使用者名稱
+|{user}
+|密碼
+|{password}
+|===
+
+image::en@modules:ROOT:aap_home.png[Ansible Automation Platform 登入頁面,width=80%]
+
+登入後，確認畫面右上方顯示您的個人 AAP 使用者名稱。
+
+image::en@modules:ROOT:aap_user.png[AAP 個人使用者名稱,width=80%]
+
+每位學員都有獨立的 Organization 與自動化資源。您只會操作自己 Organization 中的 Inventory、Job Template、Workflow、Event Stream 與 Rulebook Activation。
+
+== 3. 確認預先建立的自動化資源
+
+*所屬階段：階段 1｜環境與資源確認*
+
+=== 確認 Automation Execution Templates
+
+從左側導覽列選擇：
+
+*Automation Execution → Templates*
+
+確認至少可以看到以下 Template：
+
+[cols="1,1",options="header"]
+|===
+|Template
+|用途
+|CVE Radar - AI Risk Analysis
+|接收 EDA 事件、呼叫 AI Model，並透過 RHEL MCP 蒐集證據。
+|CVE Radar - Deploy Event Forwarder
+|在目標 RHEL 主機上部署或更新事件轉送服務。
+|CVE Radar - Deploy Repaired Website
+|部署修復後的網站程式碼。
+|CVE Radar - Enable Maintenance
+|暫時將網站切換至維護頁面。
+|CVE Radar - Governed Web Remediation
+|執行受控的網頁修復 Workflow。
+|CVE Radar - Record Suspicious Login Review
+|記錄 AI 判定的可疑登入事件。
+|CVE Radar - Reset Lab
+|將環境還原至修復前的原始網頁。
+|CVE Radar - Restore Login Page
+|完成修復後恢復正常登入頁面。
+|CVE Radar - Send ntfy Alert
+|傳送即時告警訊息。
+|CVE Radar - Verify Fixed Site
+|確認修復版本與網站存取控制。
+|===
+
+[IMPORTANT]
+====
+請勿自行建立或複製這些 Template。
+所有 Template 都已綁定預設的 Project、Inventory、Credential 與 Execution Environment。
+====
+
+== 4. Event Forwarder 的作用與部署
+
+*所屬階段：階段 2｜事件監控與 EDA 準備*
+
+在開始部署 Event Forwarder 前，先快速了解本實驗中的事件驅動自動化流程。
+
+Event-Driven Ansible（EDA）是 Ansible Automation Platform 中用來處理「事件驅動自動化」的元件。與傳統由使用者手動執行 Playbook 不同，EDA 可以持續接收外部系統送來的事件，透過 Rulebook 判斷是否符合預先定義的條件；條件成立時，再觸發對應的 AAP Job Template、Workflow 或其他自動化動作。
+
+因此，可以將整體流程簡單理解為：
+
+image::en@modules:ROOT:EDA_Flow.png[CVE Radar 自動修復流程,width=90%]
+
+Event-Driven Ansible 必須先接收到事件，才能依據 Rulebook 啟動後續的 AI Analysis。在一般企業環境中，事件通常可由 Prometheus、Splunk、SIEM、監控平台，或應用程式既有的事件管線送往 AAP Event Stream。
+
+為了降低本實驗對外部監控平台的相依性，本環境使用客製化的 Event Forwarder。它會持續監控 Kernel CVE Radar 的應用程式日誌，辨識指定的安全事件，並將事件資料轉送至學員專屬的 AAP Event Stream。
+
+在 AAP 中依序選擇：
+
+*Automation Execution → Templates*
+
+找到：
+
+[source,text]
+----
+CVE Radar - Deploy Event Forwarder
+----
+
+點選進入後，確認下方 Extra variables 中的 cve_radar_event_stream_url 網址，建議先複製至記事本備用。
+
+確認後，點選右上方 Launch template 執行。
+
+image::en@modules:ROOT:forwarder_run.png[執行 CVE Radar - Deploy Event Forwarder,width=80%]
+
+此 Template 會透過 Ansible 在目標 Edge 主機上完成下列設定：
+
+* 安裝 Event Forwarder 程式與設定檔。
+* 套用已配置的 Event Stream URL 與驗證資訊。
+* 建立並啟動 cve-radar-eda-forwarder.service。
+* 開始監控 Kernel CVE Radar 產生的安全事件日誌。
+* 將符合條件的事件送往 AAP Event Stream。
+等待 Job 執行完成，並確認狀態顯示為 Successful。部署完成後，Event Forwarder 會以背景服務持續執行。
+
+== 5. 確認 Event Stream
+
+*所屬階段：階段 2｜事件監控與 EDA 準備*
+
+從左側導覽列選擇：
+
+*Automation Decisions → Event Streams*
+
+開啟屬於您個人 Organization 的 Event Stream：
+
+[source,text,subs=attributes+]
+----
+{user} - CVE Radar Event Stream
+----
+
+請先確認其中的 URL 欄位，與剛才執行的 CVE Radar - Deploy Event Forwarder Template 內 cve_radar_event_stream_url 參數一致。
+
+image::en@modules:ROOT:event_stream_url.png[確認 Event Stream URL,width=80%]
+
+接著進行事件接收測試：
+
+. 切換至 Kernel CVE Radar 網站。
+. 確認右上角顯示目前以 user1 身分登入。
+image::en@modules:ROOT:cve-radar-header.png[確認 Kernel CVE Radar 登入身分,width=80%]
+
+登入後，點選網站上的「Admin 資訊」進入管理頁面。
+
+在尚未修復的版本中，一般使用者可以成功看到管理頁面的內容。這是本實驗刻意保留的 Broken Access Control 弱點。
+
+返回 AAP 的 Event Stream 頁面，確認 Events received 次數增加，表示 Event Stream 已成功接收到 Event Forwarder 傳送的事件。
+
+image::en@modules:ROOT:event_stream_count.png[確認 Events received 次數增加,width=80%]
+
+== 6. 確認 Rulebook Activation
+
+*所屬階段：階段 2｜事件監控與 EDA 準備*
+
+從左側導覽列選擇：
+
+*Automation Decisions → Rulebook Activations*
+
+開啟屬於您個人 Organization 的 CVE Radar Activation：
+
+[source,text,subs=attributes+]
+----
+{user} - CVE Radar Security Event Activation
+----
+
+確認 Activation 狀態為待處理。
+
+image::en@modules:ROOT:rulebook_status.png[Rulebook Activation 待處理狀態,width=80%]
+
+點選進入後，可以在下方看到 variables 設定。
+
+image::en@modules:ROOT:rulebook_detail.png[Rulebook Activation 詳細設定,width=80%]
+
+這些變數定義不同事件條件所對應的 Job Template 或 Workflow，名稱必須與既有資源一致。為確保 Lab 正常運作，請勿修改此處設定。
+
+完成檢視 Rulebook「CVE Radar Security Event Activation」後，開啟右上方的 Activation 開關，並等待狀態變更為 Running。
+
+Activation 便會接收 Event Stream 傳入的事件，並根據 Rulebook 決定要啟動 AI Analysis 或後續 Workflow。
+
+image::en@modules:ROOT:rulebook_running.png[Rulebook Activation Running 狀態,width=80%]
+
+== 7. 建立 AI Model Credential（實作設定 1）
+
+*所屬階段：階段 3｜AI 分析準備*
+
+CVE Radar - AI Risk Analysis Template 需要與 AI Model 溝通，因此必須建立連線使用的 Credential。請準備在 Module 05 取得的 AI Model URL 與 Token；本次 TAM Day Lab 提供的兩個 Model 均可使用。
+
+=== 從命令列驗證 Model URL 與 Token
+
+返回本說明右側的終端機操作，輸入以下內容。請將 <MODEL URL>、<TOKEN> 與 <MODEL_NAME> 替換為 Module 05 取得的實際資訊。
+
+[source,bash]
+----
+export MODEL_URL="<MODEL URL>/v1/chat/completions"
+export AI_API_TOKEN="<TOKEN>"
+export MODEL_NAME="<MODEL_NAME>"
+----
+
+[NOTE]
+====
+MODEL_URL 必須包含 /v1/chat/completions。
+MODEL_NAME 則根據選擇 Model，設定為 qwen3-4b-instruct 或 qwen3-30b-a3b-instruct-2507-fp8。
+====
+
+執行以下測試：
+
+[source,bash]
+----
+curl -sS \
+  --connect-timeout 5 \
+  --max-time 180 \
+  -X POST "${MODEL_URL}" \
+  -H "Authorization: Bearer ${AI_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"${MODEL_NAME}\",
+    \"messages\": [
+      {
+        \"role\": \"user\",
+        \"content\": \"Reply with exactly: MODEL_OK\"
+      }
+    ],
+    \"temperature\": 0,
+    \"max_tokens\": 20
+  }" | jq .
+----
+
+image::en@modules:ROOT:model_test.png[AI Model 測試指令,width=80%]
+
+預期回應中會出現：
+
+[source,text]
+----
+"message": {
+  "content": "MODEL_OK"
+}
+----
+
+image::en@modules:ROOT:model_verify.png[AI Model 回應 MODEL_OK,width=80%]
+
+看到 MODEL_OK 表示 Model 可以正常回應，且 URL 與 Token 設定正確。
+
+=== 在 AAP 建立 Credential
+
+從左側導覽列選擇：
+
+*Automation Execution → Infrastructure → Credentials*
+
+點選 Create credential，並依照以下欄位建立 Credential：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|建議值
+|名稱
+|AI Model Credentials - <MODEL_NAME>
+|Credential type
+|TAM Day AI Model
+|AI Model URL
+|<MODEL URL>/v1/chat/completions
+|AI Model
+|<MODEL_NAME>
+|AI API Token
+|貼上 Module 05 產生的 Token
+|===
+
+點選 Create credential 完成建立。您可以依需求，為本次 TAM Day Lab 提供的兩個 Model 分別建立 Credential；後續請在 AI Analysis Template 中選擇對應的 Credential 設定。
+
+== 8. 設定 AI Analysis 的 Model 與 RHEL MCP Endpoint（實作設定 2）
+
+*所屬階段：階段 3｜AI 分析準備*
+
+從左側導覽列選擇：
+
+*Automation Execution → Templates*
+
+開啟：
+
+[source,text]
+----
+CVE Radar - AI Risk Analysis
+----
+
+選擇 Edit template，找到 Extra variables，確認或加入以下變數：
+
+[source,yaml]
+----
+rhel_mcp_url: "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+----
+
+[NOTE]
+====
+rhel_mcp_url 指向您在模組 04 中建立的個人 RHEL MCP Service。
+AI Analysis 會透過此 Endpoint 呼叫已核准的 MCP 工具，讀取目標 RHEL 主機上的 Kernel CVE Radar 日誌。
+====
+
+在 Template 的 Credential 欄位加入前一步建立的 AI Model Credential；原本設定的 Event Stream Sender Credential 必須保留。
+
+image::en@modules:ROOT:AI_template.png[設定 AI Risk Analysis Template,width=80%]
+
+保留 Template 中既有的其他變數，不要移除 Timeout 或 TLS 驗證等設定，然後選擇 Save template。
+
+== 9. 設定告警通知（實作設定 3）
+
+*所屬階段：階段 4｜受控修復準備*
+
+從左側導覽列選擇：
+
+*Automation Execution → Templates*
+
+開啟：
+
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
+
+此 Template 透過 ntfy 傳送即時告警。ntfy 是輕量化的訊息通知服務，可使用簡單的 API 推送訊息，適合作為 Lab 的暫時通知媒介。在企業環境中，也可以依既有標準改用 Slack、Microsoft Teams 或其他通知工具。
+
+在 Template 的 Extra variables 中，ntfy_url 為隨機產生的個人通知網址。將網址複製至瀏覽器，即可進入個人的訊息中心。
+
+image::en@modules:ROOT:ntfy_url.png[開啟個人 ntfy 訊息中心,width=80%]
+
+=== 測試發送訊息
+
+執行此 Template，並在 Extra variables 中修改：
+
+[source,yaml]
+----
+ntfy_title: "這是測試訊息"
+ntfy_priority: default
+ntfy_tags: ""
+ntfy_message: "這是測試訊息內容"
+----
+
+註：ntfy_priority 與 ntfy_tags 的可用值，可參考 ntfy publishing documentation（https://docs.ntfy.sh/publish/）。
+
+選擇執行後，返回 ntfy_url 檢視，確認訊息已出現。
+
+image::en@modules:ROOT:nfty.png[ntfy 告警與修復完成通知,width=80%]
+
+== 10. 建立網頁修復與告警流程（實作設定 4）
+
+*所屬階段：階段 4｜受控修復準備*
+
+從左側導覽列選擇：
+
+*Automation Execution → Templates*
+
+開啟：
+
+[source,text]
+----
+CVE Radar - Governed Web Remediation
+----
+
+此 Workflow 已預先建立。當 AI Analysis 判斷下一步動作為 `repair_web_code` 時，EDA 會啟動此受控的修復流程。初始 Workflow 尚未加入執行節點，需要由您完成設定。
+
+image::en@modules:ROOT:workflow.png[尚未設定節點的 Governed Web Remediation Workflow,width=90%]
+
+點選右上方的 *View workflow visualizer*，再選擇 *Add step*。接下來先建立所有節點，再統一設定連線與成功條件，較不容易接錯流程。
+
+先依照以下順序加入 7 個節點。兩個 ntfy 節點可在建立時一併設定通知內容；此階段先不用處理節點間的連線。
+
+. Job Template：`CVE Radar - Enable Maintenance`
+. Approval：`Approve repaired web deployment`（Timeout：30 分鐘）
+. Job Template：`CVE Radar - Send ntfy Alert`（警告與核准通知）
+
+在第 3 個「警告與核准通知」節點的 Template variables 中設定：
+
+[source,yaml]
+----
+ntfy_title: "權限異常使用通知"
+ntfy_priority: default
+ntfy_tags: "warning,robot"
+ntfy_message: "已切換至維護頁，請至 AAP 核准後續修復流程。"
+----
+
+. Job Template：`CVE Radar - Deploy Repaired Website`
+. Job Template：`CVE Radar - Verify Fixed Site`
+. Job Template：`CVE Radar - Restore Login Page`
+. Job Template：`CVE Radar - Send ntfy Alert`（修復完成通知）
+
+在第 7 個「修復完成通知」節點的 Template variables 中設定：
+
+[source,yaml]
+----
+ntfy_title: "CVE Radar 修復完成"
+ntfy_priority: default
+ntfy_tags: "white_check_mark,robot"
+ntfy_message: "網站修復流程已完成，服務已恢復並通過驗證。"
+----
+
+7 個節點建立完成後，請參考下表建立流程。流程重點是：維護頁啟用成功後，同時送出告警並等待人工核准；只有核准成功，才會進入部署、驗證、恢復與完成通知。
+
+[cols="4,2,4",options="header"]
+|===
+|來源節點
+|條件
+|目標節點
+
+|Home
+|Run always
+|`CVE Radar - Enable Maintenance`
+
+|`CVE Radar - Enable Maintenance`
+|Run always
+|`Approve repaired web deployment`
+
+|`CVE Radar - Enable Maintenance`
+|Run always
+|`CVE Radar - Send ntfy Alert`（警告與核准通知）
+
+|`Approve repaired web deployment`
+|Run on success
+|`CVE Radar - Deploy Repaired Website`
+
+|`CVE Radar - Deploy Repaired Website`
+|Run on success
+|`CVE Radar - Verify Fixed Site`
+
+|`CVE Radar - Verify Fixed Site`
+|Run on success
+|`CVE Radar - Restore Login Page`
+
+|`CVE Radar - Restore Login Page`
+|Run on success
+|`CVE Radar - Send ntfy Alert`（修復完成通知）
+|===
+
+=== 如何建立流程連線？
+
+在 *View workflow visualizer* 中，將滑鼠移到來源節點，從節點右側出現的箭頭拖曳至目標節點。
+
+image::en@modules:ROOT:workflow_point.png[在 Workflow Visualizer 中拖曳箭頭建立節點連線,width=55%]
+
+=== 設定流程運作條件
+
+點選連線旁預設 *Run always* 的三個小白點，選擇 *Run on success*。
+
+image::en@modules:ROOT:workflow_run.png[將 Workflow 連線條件設定為 Run on success,width=55%]
+
+image::en@modules:ROOT:remediation_workflow.png[CVE Radar 修復、核准與通知 Workflow,width=95%]
+
+確認節點、連線方向與 Run on success 條件皆與流程圖一致後，選擇 *Save*。
+
+== 11. 開啟 Event Stream 事件轉送功能
+
+*所屬階段：階段 4｜受控修復準備*
+
+接著回到 *Automation Decisions → Event Streams*
+
+將 {user} - CVE Radar Event Stream 右側的切換開關打開，讓 Event Stream 開始將後續事件轉送至 Rulebook Activation。
+
+image::en@modules:ROOT:event_stream_enable.png[啟用 Forward events to rulebook activation,width=80%]
+
+至此，準備工作已完成，接下來即可開始測試。
+
+== 12. 透過網頁產生安全事件
+
+*所屬階段：階段 5｜事件分析與核准*
+
+現在您將以一般使用者身分操作 Kernel CVE Radar 網站。
+
+開啟：
+
+[source,text,subs=attributes+]
+----
+{cve_radar_url}
+----
+
+確認目前使用以下一般使用者帳號登入：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|值
+|使用者名稱
+|user1
+|密碼
+|User1@tday
+|===
+
+登入後，點選網站上的「Admin 資訊」進入管理頁面。
+
+[IMPORTANT]
+====
+只需要成功開啟一次管理頁面。
+不要在短時間內重複點選，以免產生多筆相同事件。
+====
+
+image::en@modules:ROOT:cve-radar-admin.png[一般使用者成功開啟管理頁面,width=80%]
+
+== 13. 觀察 EDA 接收事件
+
+*所屬階段：階段 5｜事件分析與核准*
+
+返回 Ansible Automation Platform。
+
+從左側導覽列選擇：
+
+*Automation Decisions → Rule Audit*
+
+您應該可以看到事件符合 Broken Access Control 規則紀錄：
+
+[source,text]
+----
+Detect non-admin access to admin content
+----
+
+點選進入後，切換到 *Events* 頁簽，再點選：
+
+[source,text]
+----
+user1 - CVE Radar Event Stream
+----
+
+即可觀察事件詳細資料。
+
+事件資料包含：
+
+* 事件類型。
+* 使用者名稱。
+* 來源 IP。
+* 目標主機。
+* 存取路徑 `/admin`。
+* 事件時間。
+* Collector Hostname。
+
+EDA 本身不直接修復網站，而是根據已定義的規則，將事件交給 AI Analysis。
+
+== 14. 檢視 AI Analysis
+
+*所屬階段：階段 5｜事件分析與核准*
+
+從左側導覽列選擇：
+
+*Automation Execution → Jobs*
+
+開啟最新的：
+
+[source,text]
+----
+CVE Radar - AI Risk Analysis
+----
+
+AI Analysis 將執行以下動作：
+
+. 接收 EDA 傳入的觸發事件。
+. 取得事件中的目標主機與日誌位置。
+. 連線至您的 RHEL MCP Endpoint。
+. 使用核准的 MCP 工具讀取應用程式日誌。
+. 將事件與日誌證據交給 AI Model。
+. 產生結構化的事件判斷與修復建議。
+. 將受控的 Decision Event 傳回 Event Stream。
+
+在 Job 輸出中，於搜尋欄位輸入 `TASK - Show safe investigation summary`，確認分析結果包含類似以下內容：
+
+[source,yaml]
+----
+incident_type: broken_access_control
+recommended_next_step: repair_web_code
+mcp_tools_used:
+  - read_log_file
+----
+
+AI 必須先透過符合允許清單的 MCP 工具取得足夠證據，才能產生可執行的 Decision Event。
+
+AI 不會直接登入主機任意執行指令，也不會直接修改環境。
+
+// TODO: 補上 AI evidence summary 與 repair_web_code decision 截圖
+// image::en@modules:ROOT:aap-ai-analysis-repair-decision.png[AI evidence summary 與 repair_web_code decision,width=80%]
+
+在 `TASK - Show AI decision event hand-off summary` 中，確認最後送出的訊息中包含：
+
+[source,yaml]
+----
+routed_workflow: governed_web_remediation
+----
+
+AI Decision Event 送回 Event Stream 後，EDA 會再次比對 Rulebook，並啟動：
+
+[source,text]
+----
+CVE Radar - Governed Web Remediation
+----
+
+=== 接收告警通知
+
+切換至 ntfy 訊息中心，應可看到 Workflow 中設定的告警通知。
+
+image::en@modules:ROOT:ntfy_warning.png[ntfy 權限異常使用通知,width=80%]
+
+== 15. 核准修復 Workflow
+
+*所屬階段：階段 5｜事件分析與核准*
+
+從左側導覽列選擇：
+
+*Automation Execution → Jobs*
+
+開啟最新的 Workflow Job。
+
+發通知訊息時，Workflow 也會先同步將網站切換至維護頁面，避免修復期間繼續提供有弱點的管理功能。接著 Workflow 會停在 Approval 節點，等待人工核准。
+
+從左側導覽列選擇
+
+*Automation Execution → Administration → Workflow Approvals*
+
+開啟最新的 `Approve repaired web deployment`
+
+image::en@modules:ROOT:Workflow_approval.png[Workflow Approval,width=80%]
+
+確認資訊正確後，選擇右上角的 *Approve*。
+
+[IMPORTANT]
+====
+人工核准是本實驗的治理控制點。
+AI 可以分析、規劃並提出修復建議，但在實際變更正式服務前，仍需由具備權限的人員核准。
+====
+
+== 16. 觀察 Workflow 執行修復
+
+*所屬階段：階段 6｜修復與驗證*
+
+核准後，Workflow 將依序執行受控的修復程序：
+
+. 部署修復後的網站程式碼。
+. 驗證修復版本與網站存取控制。
+. 恢復正常登入頁面。
+. 傳送修復完成通知。
+在 Workflow Visualizer 中確認所有節點均已完成，且最終狀態為：
+
+[source,text]
+----
+Successful
+----
+
+若任一驗證步驟失敗，Workflow 不應將失敗的修復結果視為完成。
+
+image::en@modules:ROOT:workflow_success.png[Workflow 執行成功,width=80%]
+
+Workflow 完成後，ntfy 訊息中心也會收到修復完成通知。
+
+image::en@modules:ROOT:ntfy_final.png[ntfy 修復完成通知,width=80%]
+
+== 17. 驗證修復結果
+
+*所屬階段：階段 6｜修復與驗證*
+
+返回 Kernel CVE Radar 網站：
+
+[source,text,subs=attributes+]
+----
+{cve_radar_url}
+----
+
+若瀏覽器仍保留舊的登入 Session，請先登出。
+
+再次使用一般使用者 user1 登入：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|值
+|使用者名稱
+|user1
+|密碼
+|User1@tday
+|===
+
+嘗試開啟 Admin 或管理頁面。
+
+一般使用者現在應看到拒絕存取訊息，且無法查看管理內容。網站首頁下方也應顯示：
+
+[source,text]
+----
+FIXED VERSION
+----
+
+image::en@modules:ROOT:cve-radar-fix.png[修復後一般使用者無法存取管理頁面,width=80%]
+
+接著登出一般使用者，並使用管理員帳號登入：
+
+[cols="1,1",options="header"]
+|===
+|欄位
+|值
+|使用者名稱
 |admin
-|admin123
+|密碼
+|TAMDay@2026
 |===
 
-== 確認損壞狀態
+確認管理員仍可正常開啟管理頁面。
 
-開啟您的 portal 路由：
+這表示修復只修正授權控制，不會破壞合法的管理功能。
 
-[source,console,role=execute,subs=attributes+]
-----
-https://portal-{user}.{openshift_cluster_ingress_domain}
-----
+image::en@modules:ROOT:cve-radar-admin-success.png[修復後管理員仍可存取管理頁面,width=80%]
 
-確認健康狀態端點正常運作：
+== 您完成了什麼
 
-[source,console,role=execute,subs=attributes+]
-----
-curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
-----
+恭喜您！您已完成一個受控的 Agentic AI 自動修復流程：
 
-以一般使用者身分登入：
+* 網頁操作產生真實應用程式事件。
+* Event Forwarder 將事件傳送至 AAP Event Stream。
+* EDA Rulebook 自動啟動 AI Analysis。
+* AI 透過 RHEL MCP 蒐集遠端證據。
+* AI 產生結構化且受限的修復建議。
+* Decision Event 觸發 AAP Workflow。
+* 人員在變更服務前進行核准。
+* Workflow 執行維護、部署、恢復與驗證。
+* AAP Job History 保留完整的執行與稽核紀錄。
 
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"user123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-----
-
-存取管理員頁面：
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -b cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-初始結果為：
-
-[listing]
-----
-HTTP/1.1 200 OK
-----
-
-這是刻意設計的安全缺陷。應用程式正常運行，但其授權政策已損壞。
-
-// TODO: Add a screenshot showing the ordinary user /admin request returning HTTP/1.1 200 OK before remediation.
-// Suggested filename: portal-broken-admin-access.png
-
-== 使用 RHOAI Playground 調查
-
-開啟 Red Hat OpenShift AI 並進入 Gen AI Playground。
-
-啟用以下 MCP 伺服器：
-
-* Kubernetes MCP Server
-* Rocket.Chat MCP Server
-* AAP MCP Server
-
-使用以下提示：
-
-[listing,role=execute,subs=attributes+]
-----
-We are investigating a security incident for my lab user {user}.
-The portal application is in namespace tam-{user} and the route is
-https://portal-{user}.{openshift_cluster_ingress_domain}.
-
-Please inspect the portal pod logs, deployment metadata, and recent validation output.
-Explain why an ordinary user can access /admin and propose a minimal secure code fix.
-Do not trigger any deployment yet.
-----
-
-預期的根本原因分析為：
-
-* `/admin` 只檢查使用者是否已登入。
-* `/admin` 未強制執行 `admin` 角色。
-* 一般使用者應收到 HTTP 狀態碼 `403`。
-
-// TODO: Add a screenshot showing the RHOAI Playground root-cause analysis explaining the missing admin role check.
-// Suggested filename: playground-portal-root-cause.png
-
-== 使用 Cline 修復應用程式
-
-開啟您的 OpenShift Dev Spaces 工作區和 portal 應用程式儲存庫。
-
-使用 Cline 搭配 RHOAI 代管的模型端點。向 Cline 提問：
-
-[listing,role=execute]
-----
-This Flask portal has a broken authorization bug.
-The /admin route currently allows any authenticated user.
-
-Please make the smallest safe code change so:
-- unauthenticated users receive 401
-- ordinary users receive 403
-- admin users receive 200
-- /healthz remains 200
-
-Also update or add tests that prove these behaviors.
-Show me the diff before I commit.
-----
-
-在接受變更前，審查建議的程式碼修改。
-
-// TODO: Add a screenshot showing Cline's proposed authorization diff and test changes before accepting them.
-// Suggested filename: cline-portal-auth-diff.png
-
-執行本地測試：
-
-[source,console,role=execute]
-----
-pytest -q
-----
-
-// TODO: Add a screenshot showing pytest passing for the portal authorization tests.
-// Suggested filename: portal-pytest-success.png
-
-提交您的修復：
-
-[source,console,role=execute]
-----
-git status
-git add app.py tests/test_authorization.py
-git commit -m "Fix admin authorization check"
-git push
-----
-
-== 觸發 AAP 修復
-
-部署前，先確認程式碼差異可接受。
-
-啟動已核准的 AAP 工作範本：
-
-[listing,role=execute]
-----
-tam-day-portal-remediate
-----
-
-提供以下問卷變數：
-
-[source,yaml,role=execute,subs=attributes+]
-----
-username: "{user}"
-namespace: "tam-{user}"
-app_name: "portal-{user}"
-route_url: "https://portal-{user}.{openshift_cluster_ingress_domain}"
-image: "quay.io/YOUR_ORG/tam-day-portal:fixed"
-notify_channel: "#rh-tam-alerts"
-----
-
-AAP 工作將會：
-
-* 修補您的 portal Deployment
-* 等待部署完成
-* 執行安全驗證
-* 回報結果
-
-// TODO: Add a screenshot showing the AAP job template survey filled with username, namespace, app_name, route_url, image, and notify_channel.
-// Suggested filename: aap-portal-remediation-survey.png
-
-// TODO: Add a screenshot showing the AAP remediation job completed successfully with validation output.
-// Suggested filename: aap-portal-remediation-success.png
-
-== 驗證修復後的狀態
-
-一般使用者存取 `/admin` 現在必須失敗：
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"user123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-
-curl -k -b cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-預期結果：
-
-[listing]
-----
-HTTP/1.1 403 FORBIDDEN
-----
-
-// TODO: Add a screenshot showing ordinary user access to /admin returning HTTP/1.1 403 FORBIDDEN after remediation.
-// Suggested filename: portal-fixed-user-forbidden.png
-
-管理員存取必須仍然正常：
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c admin-cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-
-curl -k -b admin-cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-預期結果：
-
-[listing]
-----
-HTTP/1.1 200 OK
-----
-
-// TODO: Add a screenshot showing administrator access to /admin returning HTTP/1.1 200 OK after remediation.
-// Suggested filename: portal-fixed-admin-ok.png
-
-== 治理討論
-
-本實驗刻意保持明確的控制邊界：
-
-* RHOAI 和 MCP 協助調查。
-* Cline 在開發者工作區提出並套用原始碼變更。
-* Git 記錄程式碼變更。
-* AAP 執行部署和驗證。
-* 修復前需要人工核准。
-* AAP 工作歷史和聊天通知提供稽核脈絡。
-
-此模式可透過將每位使用者的 OpenShift 工作負載替換為 AAP 清單、憑證和主機層級部署任務，擴展到 RHEL VM 目標。
-////
+這個架構將 AI 的分析與規劃能力，限制在企業可控、可核准且可追蹤的自動化流程中。
