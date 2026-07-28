@@ -475,7 +475,7 @@ ntfy_message: "這是測試訊息內容"
 
 選擇執行後，返回 ntfy_url 檢視，確認訊息已出現。
 
-image::en@modules:ROOT:nfty_test.png[ntfy 告警測試通知,width=80%]
+image::en@modules:ROOT:ntfy_test.png[ntfy 告警測試通知,width=80%]
 
 == 10. 建立網頁修復與告警流程（實作設定 4）
 
