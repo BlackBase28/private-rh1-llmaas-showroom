@@ -5,6 +5,6 @@
 * xref:module-05-code.adoc#code-asst[模組 5：建構 AI 輔助開發環境]
 * xref:module-06-tryit.adoc#code[模組 6：親自動手試試看]
 * xref:module-07-analysis.adoc#analysis-logs[模組 7：分析 Edge 應用程式日誌]
-* xref:module-08-remediate.adoc#remediation-and-redeploy[模組 8：挑戰 / 加碼：修復並重新部署]
+* xref:module-08-remediate.adoc#remediation-and-redeploy[模組 8：以 Agentic AI 實現事件驅動的受控修復 ]
 * xref:module-09-closing.adoc#closing-summary[總結]
 * xref:module-10-resources.adoc#resources[延伸學習資源]
