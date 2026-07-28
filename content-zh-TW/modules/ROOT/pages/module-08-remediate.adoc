@@ -274,6 +274,7 @@ image::en@modules:ROOT:event_stream_url.png[確認 Event Stream URL,width=80%]
 
 . 切換至 Kernel CVE Radar 網站。
 . 確認右上角顯示目前以 user1 身分登入。
+
 image::en@modules:ROOT:cve-radar-header.png[確認 Kernel CVE Radar 登入身分,width=80%]
 
 登入後，點選網站上的「Admin 資訊」進入管理頁面。
