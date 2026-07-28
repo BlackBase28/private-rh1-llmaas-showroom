@@ -1,5 +1,4 @@
 :imagesdir: ../assets/images
-:page-aliases: main@modules:ROOT:module-08-remediate.adoc
 
 [#event-driven-ai-remediation]
 = 使用 EDA 與 AI 完成自動修復
