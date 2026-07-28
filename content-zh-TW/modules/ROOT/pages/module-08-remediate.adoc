@@ -1,7 +1,7 @@
 :imagesdir: ../assets/images
 
 [#event-driven-ai-remediation]
-= 使用 EDA 與 AI 完成自動修復
+= 以 Agentic AI 實現事件驅動的受控修復
 
 在前面的模組中，您已經體驗 AI 的各種應用，包括建置 RHEL MCP，並測試讀取遠端 RHEL 主機上的應用程式日誌。
 
