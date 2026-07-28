@@ -3,8 +3,6 @@
 [#event-driven-ai-remediation]
 = 使用 EDA 與 AI 完成自動修復
 
-_Module 08 — Event-Driven AI Remediation_
-
 在前面的模組中，您已經體驗 AI 的各種應用，包括建置 RHEL MCP，並測試讀取遠端 RHEL 主機上的應用程式日誌。
 
 在本模組中，您將把前面建立的 AI 與 RHEL MCP 能力整合至 Ansible Automation Platform。整體事件驅動修復鏈為「事件產生 → Event Forwarder → EDA Rulebook → AI Analysis + RHEL MCP → Governed Workflow + 人工核准 → 驗證與恢復」。當一般使用者成功開啟不應存取的管理頁面時，事件會沿著這條流程自動傳遞：EDA 依 Rulebook 啟動 AI Analysis，AI 蒐集證據並提出受控的修復建議，最後由 AAP Workflow 在人工核准後完成網頁修復與驗證。
@@ -276,6 +274,7 @@ image::en@modules:ROOT:event_stream_url.png[確認 Event Stream URL,width=80%]
 
 . 切換至 Kernel CVE Radar 網站。
 . 確認右上角顯示目前以 user1 身分登入。
+
 image::en@modules:ROOT:cve-radar-header.png[確認 Kernel CVE Radar 登入身分,width=80%]
 
 登入後，點選網站上的「Admin 資訊」進入管理頁面。
@@ -337,7 +336,7 @@ export MODEL_NAME="<MODEL_NAME>"
 [NOTE]
 ====
 MODEL_URL 必須包含 /v1/chat/completions。
-MODEL_NAME 則根據選擇 Model，設定為 qwen3-4b-instruct 或 qwen3-30b-a3b-instruct-2507-fp8。
+MODEL_NAME 則根據選擇 Model，設定為 "qwen3-4b-instruct" 或 "qwen3-30b-a3b-instruct-2507-fp8"。
 ====
 
 執行以下測試：
