@@ -1,9 +1,7 @@
 :imagesdir: ../assets/images
 
-[#remediation-and-redeploy]
-= 挑戰 / 加碼：修復並重新部署
-
-在本實驗中，您將調查並修復自己 OpenShift 工作負載中的安全事件。
+[#event-driven-ai-remediation]
+= 以 Agentic AI 實現事件驅動的受控修復
 
 應用程式本身運作正常，但授權機制已損壞：一般使用者可以存取 `/admin`。
 
@@ -56,12 +54,76 @@ https://portal-{user}.{openshift_cluster_ingress_domain}
 
 確認健康狀態端點正常運作：
 
-[source,console,role=execute,subs=attributes+]
+image::en@modules:ROOT:event_stream_url.png[確認 Event Stream URL,width=80%]
+
+接著進行事件接收測試：
+
+. 切換至 Kernel CVE Radar 網站。
+. 確認右上角顯示目前以 user1 身分登入。
+
+image::en@modules:ROOT:cve-radar-header.png[確認 Kernel CVE Radar 登入身分,width=80%]
+
+登入後，點選網站上的「Admin 資訊」進入管理頁面。
+
+在尚未修復的版本中，一般使用者可以成功看到管理頁面的內容。這是本實驗刻意保留的 Broken Access Control 弱點。
+
+返回 AAP 的 Event Stream 頁面，確認 Events received 次數增加，表示 Event Stream 已成功接收到 Event Forwarder 傳送的事件。
+
+image::en@modules:ROOT:event_stream_count.png[確認 Events received 次數增加,width=80%]
+
+== 6. 確認 Rulebook Activation
+
+*所屬階段：階段 2｜事件監控與 EDA 準備*
+
+從左側導覽列選擇：
+
+*Automation Decisions → Rulebook Activations*
+
+開啟屬於您個人 Organization 的 CVE Radar Activation：
+
+[source,text,subs=attributes+]
+----
+{user} - CVE Radar Security Event Activation
+----
+
+確認 Activation 狀態為待處理。
+
+image::en@modules:ROOT:rulebook_status.png[Rulebook Activation 待處理狀態,width=80%]
+
+點選進入後，可以在下方看到 variables 設定。
+
+image::en@modules:ROOT:rulebook_detail.png[Rulebook Activation 詳細設定,width=80%]
+
+這些變數定義不同事件條件所對應的 Job Template 或 Workflow，名稱必須與既有資源一致。為確保 Lab 正常運作，請勿修改此處設定。
+
+完成檢視 Rulebook「CVE Radar Security Event Activation」後，開啟右上方的 Activation 開關，並等待狀態變更為 Running。
+
+Activation 便會接收 Event Stream 傳入的事件，並根據 Rulebook 決定要啟動 AI Analysis 或後續 Workflow。
+
+image::en@modules:ROOT:rulebook_running.png[Rulebook Activation Running 狀態,width=80%]
+
+== 7. 建立 AI Model Credential（實作設定 1）
+
+*所屬階段：階段 3｜AI 分析準備*
+
+CVE Radar - AI Risk Analysis Template 需要與 AI Model 溝通，因此必須建立連線使用的 Credential。請準備在 Module 05 取得的 AI Model URL 與 Token；本次 TAM Day Lab 提供的兩個 Model 均可使用。
+
+=== 從命令列驗證 Model URL 與 Token
+
+返回本說明右側的終端機操作，輸入以下內容。請將 <MODEL URL>、<TOKEN> 與 <MODEL_NAME> 替換為 Module 05 取得的實際資訊。
+
+[source,bash]
 ----
 curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
 ----
 
-以一般使用者身分登入：
+[NOTE]
+====
+MODEL_URL 必須包含 /v1/chat/completions。
+MODEL_NAME 則根據選擇 Model，設定為 "qwen3-4b-instruct" 或 "qwen3-30b-a3b-instruct-2507-fp8"。
+====
+
+執行以下測試：
 
 [source,console,role=execute,subs=attributes+]
 ----
@@ -109,16 +171,22 @@ We are investigating a security incident for my lab user {user}.
 The portal application is in namespace tam-{user} and the route is
 https://portal-{user}.{openshift_cluster_ingress_domain}.
 
-Please inspect the portal pod logs, deployment metadata, and recent validation output.
-Explain why an ordinary user can access /admin and propose a minimal secure code fix.
-Do not trigger any deployment yet.
+此 Template 透過 ntfy 傳送即時告警。ntfy 是輕量化的訊息通知服務，可使用簡單的 API 推送訊息，適合作為 Lab 的暫時通知媒介。在企業環境中，也可以依既有標準改用 Slack、Microsoft Teams 或其他通知工具。
+
+在 Template 的 Extra variables 中，ntfy_url 為隨機產生的個人通知網址。將網址複製至瀏覽器，即可進入個人的訊息中心。
+
+image::en@modules:ROOT:ntfy_init.png[開啟個人 ntfy 訊息中心,width=80%]
+
+=== 測試發送訊息
+
+執行此 Template，並在 Extra variables 中修改：
+
+[source,yaml]
 ----
 
 預期的根本原因分析為：
 
-* `/admin` 只檢查使用者是否已登入。
-* `/admin` 未強制執行 `admin` 角色。
-* 一般使用者應收到 HTTP 狀態碼 `403`。
+image::en@modules:ROOT:ntfy_test.png[ntfy 告警測試通知,width=80%]
 
 // TODO: Add a screenshot showing the RHOAI Playground root-cause analysis explaining the missing admin role check.
 // Suggested filename: playground-portal-root-cause.png
@@ -163,10 +231,7 @@ pytest -q
 
 [source,console,role=execute]
 ----
-git status
-git add app.py tests/test_authorization.py
-git commit -m "Fix admin authorization check"
-git push
+https://{edge_host}
 ----
 
 == 觸發 AAP 修復
@@ -227,8 +292,41 @@ curl -k -b cookies.txt -i \
 HTTP/1.1 403 FORBIDDEN
 ----
 
-// TODO: Add a screenshot showing ordinary user access to /admin returning HTTP/1.1 403 FORBIDDEN after remediation.
-// Suggested filename: portal-fixed-user-forbidden.png
+=== 接收告警通知
+
+切換至 ntfy 訊息中心，應可看到 Workflow 中設定的告警通知。
+
+image::en@modules:ROOT:ntfy_warning.png[ntfy 權限異常使用通知,width=80%]
+
+== 15. 核准修復 Workflow
+
+*所屬階段：階段 5｜事件分析與核准*
+
+從左側導覽列選擇：
+
+*Automation Execution → Jobs*
+
+開啟最新的 Workflow Job。
+
+發通知訊息時，Workflow 也會先同步將網站切換至維護頁面，避免修復期間繼續提供有弱點的管理功能。接著 Workflow 會停在 Approval 節點，等待人工核准。
+
+從左側導覽列選擇
+
+*Automation Execution → Administration → Workflow Approvals*
+
+開啟最新的 `Approve repaired web deployment`
+
+image::en@modules:ROOT:workflow_approval.png[Workflow Approval,width=80%]
+
+確認資訊正確後，選擇右上角的 *Approve*。
+
+[IMPORTANT]
+====
+人工核准是本實驗的治理控制點。
+AI 可以分析、規劃並提出修復建議，但在實際變更正式服務前，仍需由具備權限的人員核准。
+====
+
+== 16. 觀察 Workflow 執行修復
 
 管理員存取必須仍然正常：
 
@@ -239,8 +337,9 @@ curl -k -c admin-cookies.txt \
   -d '{"username":"admin","password":"admin123"}' \
   https://portal-{user}.{openshift_cluster_ingress_domain}/login
 
-curl -k -b admin-cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
+[source,text,subs=attributes+]
+----
+https://{edge_host}
 ----
 
 預期結果：
