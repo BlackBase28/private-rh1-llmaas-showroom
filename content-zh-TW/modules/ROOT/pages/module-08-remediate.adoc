@@ -455,7 +455,7 @@ CVE Radar - Send ntfy Alert
 
 在 Template 的 Extra variables 中，ntfy_url 為隨機產生的個人通知網址。將網址複製至瀏覽器，即可進入個人的訊息中心。
 
-image::en@modules:ROOT:ntfy_url.png[開啟個人 ntfy 訊息中心,width=80%]
+image::en@modules:ROOT:ntfy_init.png[開啟個人 ntfy 訊息中心,width=80%]
 
 === 測試發送訊息
 
@@ -473,7 +473,7 @@ ntfy_message: "這是測試訊息內容"
 
 選擇執行後，返回 ntfy_url 檢視，確認訊息已出現。
 
-image::en@modules:ROOT:nfty.png[ntfy 告警與修復完成通知,width=80%]
+image::en@modules:ROOT:ntfy_test.png[ntfy 告警與修復完成通知,width=80%]
 
 == 10. 建立網頁修復與告警流程（實作設定 4）
 
@@ -602,7 +602,7 @@ image::en@modules:ROOT:event_stream_enable.png[啟用 Forward events to rulebook
 
 [source,text,subs=attributes+]
 ----
-{cve_radar_url}
+https://{edge_host}
 ----
 
 確認目前使用以下一般使用者帳號登入：
@@ -745,7 +745,7 @@ image::en@modules:ROOT:ntfy_warning.png[ntfy 權限異常使用通知,width=80%]
 
 開啟最新的 `Approve repaired web deployment`
 
-image::en@modules:ROOT:Workflow_approval.png[Workflow Approval,width=80%]
+image::en@modules:ROOT:workflow_approval.png[Workflow Approval,width=80%]
 
 確認資訊正確後，選擇右上角的 *Approve*。
 
@@ -788,7 +788,7 @@ image::en@modules:ROOT:ntfy_final.png[ntfy 修復完成通知,width=80%]
 
 [source,text,subs=attributes+]
 ----
-{cve_radar_url}
+https://{edge_host}
 ----
 
 若瀏覽器仍保留舊的登入 Session，請先登出。
