@@ -115,7 +115,7 @@ image::en@modules:ROOT:AAP_Architecture.png[受控的網頁修復流程架構,wi
 
 開啟您的 Kernel CVE Radar 網站：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
@@ -140,7 +140,7 @@ image::en@modules:ROOT:cve-radar-home.png[Kernel CVE Radar 登入頁面,width=80
 
 開啟您的 Ansible Automation Platform：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://my-aap-aap.{openshift_cluster_ingress_domain}
 ----
@@ -261,7 +261,7 @@ image::en@modules:ROOT:forwarder_run.png[執行 CVE Radar - Deploy Event Forward
 
 開啟屬於您個人 Organization 的 Event Stream：
 
-[source,text,subs=attributes+]
+[source,text]
 ----
 {user} - CVE Radar Event Stream
 ----
@@ -295,7 +295,7 @@ image::en@modules:ROOT:event_stream_count.png[確認 Events received 次數增�
 
 開啟屬於您個人 Organization 的 CVE Radar Activation：
 
-[source,text,subs=attributes+]
+[source,text]
 ----
 {user} - CVE Radar Security Event Activation
 ----
@@ -326,7 +326,7 @@ CVE Radar - AI Risk Analysis Template 需要與 AI Model 溝通，因此必須�
 
 返回本說明右側的終端機操作，輸入以下內容。請將 <MODEL URL>、<TOKEN> 與 <MODEL_NAME> 替換為 Module 05 取得的實際資訊。
 
-[source,bash]
+[source,console,role=execute,subs=attributes+]
 ----
 export MODEL_URL="<MODEL URL>/v1/chat/completions"
 export AI_API_TOKEN="<TOKEN>"
@@ -341,7 +341,7 @@ MODEL_NAME 則根據選擇 Model，設定為 qwen3-4b-instruct 或 qwen3-30b-a3b
 
 執行以下測試：
 
-[source,bash]
+[source,console,role=execute]
 ----
 curl -sS \
   --connect-timeout 5 \
@@ -420,9 +420,9 @@ CVE Radar - AI Risk Analysis
 
 選擇 Edit template，找到 Extra variables，確認或加入以下變數：
 
-[source,yaml]
+[source,console,role=execute,subs=attributes+]
 ----
-rhel_mcp_url: "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+rhel_mcp_url: "http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp"
 ----
 
 [NOTE]
@@ -435,7 +435,7 @@ AI Analysis 會透過此 Endpoint 呼叫已核准的 MCP 工具，讀取目標 R
 
 image::en@modules:ROOT:AI_template.png[設定 AI Risk Analysis Template,width=80%]
 
-保留 Template 中既有的其他變數，不要移除 Timeout 或 TLS 驗證等設定，然後選擇 Save template。
+保留 Template 中既有的其他變數，[red yellow-background]#不要移除 Timeout 或 TLS 驗證等設定#，然後選擇 Save template。
 
 == 9. 設定告警通知（實作設定 3）
 
@@ -462,7 +462,7 @@ image::en@modules:ROOT:ntfy_init.png[開啟個人 ntfy 訊息中心,width=80%]
 
 執行此 Template，並在 Extra variables 中修改：
 
-[source,yaml]
+[source,console,role=execute,subs=attributes+]
 ----
 ntfy_title: "這是測試訊息"
 ntfy_priority: default
@@ -505,7 +505,7 @@ image::en@modules:ROOT:workflow.png[尚未設定節點的 Governed Web Remediati
 
 在第 3 個「警告與核准通知」節點的 Template variables 中設定：
 
-[source,yaml]
+[source,console,role=execute,subs=attributes+]
 ----
 ntfy_title: "權限異常使用通知"
 ntfy_priority: default
@@ -520,7 +520,7 @@ ntfy_message: "已切換至維護頁，請至 AAP 核准後續修復流程。"
 
 在第 7 個「修復完成通知」節點的 Template variables 中設定：
 
-[source,yaml]
+[source,console,role=execute,subs=attributes+]
 ----
 ntfy_title: "CVE Radar 修復完成"
 ntfy_priority: default
@@ -601,7 +601,7 @@ image::en@modules:ROOT:event_stream_enable.png[啟用 Forward events to rulebook
 
 開啟：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
@@ -649,7 +649,7 @@ Detect non-admin access to admin content
 
 [source,text]
 ----
-user1 - CVE Radar Event Stream
+{user} - CVE Radar Event Stream
 ----
 
 即可觀察事件詳細資料。
@@ -787,7 +787,7 @@ image::en@modules:ROOT:ntfy_final.png[ntfy 修復完成通知,width=80%]
 
 返回 Kernel CVE Radar 網站：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
