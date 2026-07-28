@@ -435,7 +435,7 @@ AI Analysis 會透過此 Endpoint 呼叫已核准的 MCP 工具，讀取目標 R
 
 image::en@modules:ROOT:AI_template.png[設定 AI Risk Analysis Template,width=80%]
 
-保留 Template 中既有的其他變數，[red yellow-background]#不要移除 Timeout 或 TLS 驗證等設定#，然後選擇 Save template。
+保留 Template 中既有的其他變數，不要移除 Timeout 或 TLS 驗證等設定，然後選擇 Save template。
 
 == 9. 設定告警通知（實作設定 3）
 
