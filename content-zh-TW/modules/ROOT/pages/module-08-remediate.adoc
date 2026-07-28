@@ -115,7 +115,7 @@ image::en@modules:ROOT:AAP_Architecture.png[受控的網頁修復流程架構,wi
 
 開啟您的 Kernel CVE Radar 網站：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
@@ -140,7 +140,7 @@ image::en@modules:ROOT:cve-radar-home.png[Kernel CVE Radar 登入頁面,width=80
 
 開啟您的 Ansible Automation Platform：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://my-aap-aap.{openshift_cluster_ingress_domain}
 ----
@@ -261,7 +261,7 @@ image::en@modules:ROOT:forwarder_run.png[執行 CVE Radar - Deploy Event Forward
 
 開啟屬於您個人 Organization 的 Event Stream：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 {user} - CVE Radar Event Stream
 ----
@@ -295,7 +295,7 @@ image::en@modules:ROOT:event_stream_count.png[確認 Events received 次數增�
 
 開啟屬於您個人 Organization 的 CVE Radar Activation：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 {user} - CVE Radar Security Event Activation
 ----
@@ -601,7 +601,7 @@ image::en@modules:ROOT:event_stream_enable.png[啟用 Forward events to rulebook
 
 開啟：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
@@ -787,7 +787,7 @@ image::en@modules:ROOT:ntfy_final.png[ntfy 修復完成通知,width=80%]
 
 返回 Kernel CVE Radar 網站：
 
-[source,text,subs=attributes+]
+[source,console,role=execute,subs=attributes+]
 ----
 https://{edge_host}
 ----
