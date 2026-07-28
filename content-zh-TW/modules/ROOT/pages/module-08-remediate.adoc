@@ -341,7 +341,7 @@ MODEL_NAME 則根據選擇 Model，設定為 qwen3-4b-instruct 或 qwen3-30b-a3b
 
 執行以下測試：
 
-[source,console,role=execute,subs=attributes+]
+[source,console,role=execute]
 ----
 curl -sS \
   --connect-timeout 5 \
@@ -422,7 +422,7 @@ CVE Radar - AI Risk Analysis
 
 [source,console,role=execute,subs=attributes+]
 ----
-rhel_mcp_url: "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+rhel_mcp_url: "http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp"
 ----
 
 [NOTE]
@@ -435,7 +435,7 @@ AI Analysis 會透過此 Endpoint 呼叫已核准的 MCP 工具，讀取目標 R
 
 image::en@modules:ROOT:AI_template.png[設定 AI Risk Analysis Template,width=80%]
 
-保留 Template 中既有的其他變數，不要移除 Timeout 或 TLS 驗證等設定，然後選擇 Save template。
+保留 Template 中既有的其他變數，[red yellow-background]#不要移除 Timeout 或 TLS 驗證等設定#，然後選擇 Save template。
 
 == 9. 設定告警通知（實作設定 3）
 
