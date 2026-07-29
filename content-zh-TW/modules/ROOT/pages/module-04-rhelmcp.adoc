@@ -95,9 +95,7 @@ LAB_GROUP=$(id -gn "${LAB_USER}")
 sudo mkdir -p "${LAB_HOME}/.ssh"
 sudo touch "${LAB_HOME}/.ssh/authorized_keys"
 
-sudo chown "${LAB_USER}:${LAB_GROUP}" \
-  "${LAB_HOME}/.ssh" \
-  "${LAB_HOME}/.ssh/authorized_keys"
+sudo chown -R "${LAB_USER}:${LAB_GROUP}" ${LAB_HOME}/.ssh
 
 sudo chmod 700 "${LAB_HOME}/.ssh"
 sudo chmod 600 "${LAB_HOME}/.ssh/authorized_keys"
