@@ -1,269 +1,852 @@
 :imagesdir: ../assets/images
-:page-aliases: main@modules:ROOT:module-08-remediate.adoc
 
-[#remediation-and-redeploy]
-= Challenge / Bonus: Remediate and Redeploy
+[#event-driven-ai-remediation]
+= Implementing Event-Driven Governed Remediation with Agentic AI
 
-In this lab, you will investigate and remediate a security incident in your own OpenShift workload.
+In the previous modules, you explored various AI applications, including building RHEL MCP and testing access to application logs on a remote RHEL host.
 
-The application is healthy, but authorization is broken: an ordinary user can access `/admin`.
+In this module, you will integrate the AI and RHEL MCP capabilities built earlier with Ansible Automation Platform. The overall event-driven remediation chain is "Event Generation → Event Forwarder → EDA Rulebook → AI Analysis + RHEL MCP → Governed Workflow + Manual Approval → Validation and Recovery." When a regular user successfully opens an administrative page that should not be accessible, the event automatically travels through this flow: EDA launches AI Analysis according to the Rulebook, AI gathers evidence and proposes a governed remediation recommendation, and finally the AAP Workflow completes website remediation and validation after manual approval.
 
-== Lab Objective
+image::en@modules:ROOT:AAP_Architecture.png[Governed web remediation flow architecture,width=90%]
 
-You will complete an enterprise-style AI-assisted remediation flow:
+[NOTE]
+====
+The Organization, Inventory, Credential, Project, Job Template, Workflow Job Template, Event Stream, and Rulebook Activation required for this lab have already been created before class. A small number of settings still need to be completed by the learner; follow the steps in this module to configure them one by one.
+====
 
-* Investigate the incident with Red Hat OpenShift AI and MCP tools
-* Use Cline in OpenShift Dev Spaces to fix the application code
-* Review the generated code diff before deployment
-* Trigger an approved Ansible Automation Platform remediation job
-* Validate that ordinary users are denied and administrators are allowed
+== Lab Objectives
+
+* Log in to your personal Ansible Automation Platform environment.
+* Verify the automation resources pre-created in AAP.
+* Deploy the event forwarding service from AAP.
+* Create an AI Model Credential.
+* Configure the RHEL MCP Endpoint and AI Model Endpoint used by AI Analysis.
+* Build the governed website remediation Workflow.
+* Generate a Broken Access Control event through website interaction.
+* Observe EDA launching AI Analysis.
+* Review the evidence gathered by AI and the remediation decision.
+* Approve and execute the governed website remediation Workflow.
+* Verify that a regular user can no longer access the administrative page.
+
+== Workshop Hands-on Flow
+
+The architecture diagram above shows how this automated remediation flow proceeds from an event through remediation and validation. The following 17 operational steps are organized into six hands-on phases, and each step indicates the phase it belongs to. Only steps 7 through 10 require configuration changes, for a total of four hands-on configuration tasks; the remaining steps mainly involve verifying existing resources, running pre-created Templates, enabling functions, triggering events, or observing results.
 
 
-////
-== Your Environment
-
-Each learner has an isolated target workload:
-
-[listing,subs=attributes+]
-----
-Namespace: tam-{user}
-Application: portal-{user}
-Route: https://portal-{user}.{openshift_cluster_ingress_domain}
-----
-
-Test credentials:
-
-[cols="1,1,1"]
+[cols="1,3,5,2",options="header"]
 |===
-|Role |Username |Password
+|Step
+|Phase
+|Content
+|Action
+|1
+|Phase 1｜Environment and Resource Verification
+|Log in to the Kernel CVE Radar website
+|Log in / View
+|2
+|Phase 1｜Environment and Resource Verification
+|Log in to Ansible Automation Platform
+|Log in / View
+|3
+|Phase 1｜Environment and Resource Verification
+|Verify pre-created automation resources
+|Verify
+|4
+|Phase 2｜Event Monitoring and EDA Preparation
+|Role and Deployment of Event Forwarder
+|Run Template
+|5
+|Phase 2｜Event Monitoring and EDA Preparation
+|Verify Event Stream
+|Verify event reception
+|6
+|Phase 2｜Event Monitoring and EDA Preparation
+|Verify Rulebook Activation
+|Verify / Enable
+|7
+|Phase 3｜AI Analysis Preparation
+|Create AI Model Credential
+|Hands-on Configuration 1
+|8
+|Phase 3｜AI Analysis Preparation
+|Configure the Model and RHEL MCP Endpoint for AI Analysis
+|Hands-on Configuration 2
+|9
+|Phase 4｜Governed Remediation Preparation
+|Configure alert notifications
+|Hands-on Configuration 3
+|10
+|Phase 4｜Governed Remediation Preparation
+|Build the website remediation and alert workflow
+|Hands-on Configuration 4
+|11
+|Phase 4｜Governed Remediation Preparation
+|Enable Event Stream event forwarding
+|Enable
+|12
+|Phase 5｜Event Analysis and Approval
+|Generate a security event through the website
+|Trigger
+|13
+|Phase 5｜Event Analysis and Approval
+|Observe EDA receiving the event
+|Observe
+|14
+|Phase 5｜Event Analysis and Approval
+|Review AI Analysis
+|Observe
+|15
+|Phase 5｜Event Analysis and Approval
+|Approve the remediation Workflow
+|Approve
+|16
+|Phase 6｜Remediation and Validation
+|Observe the Workflow executing remediation
+|Observe
+|17
+|Phase 6｜Remediation and Validation
+|Validate the remediation result
+|Validate
+|===
 
-|Ordinary user
-|user
-|user123
+== 1. Log in to the Kernel CVE Radar website
 
-|Administrator
+*Phase: Phase 1｜Environment and Resource Verification*
+
+Open your Kernel CVE Radar website:
+
+[source,console,role=execute,subs=attributes+]
+----
+https://{edge_host}
+----
+
+Log in with the following account:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Value
+|Username
+|user1
+|Password
+|User1@tday
+|===
+
+image::en@modules:ROOT:cve-radar-home.png[Kernel CVE Radar login page,width=80%]
+
+== 2. Log in to Ansible Automation Platform
+
+*Phase: Phase 1｜Environment and Resource Verification*
+
+Open your Ansible Automation Platform:
+
+[source,console,role=execute,subs=attributes+]
+----
+https://my-aap-aap.{openshift_cluster_ingress_domain}
+----
+
+Log in with the following account:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Value
+|Username
+|{user}
+|Password
+|{password}
+|===
+
+image::en@modules:ROOT:aap_home.png[Ansible Automation Platform login page,width=80%]
+
+After logging in, verify that your personal AAP username is displayed in the upper-right corner.
+
+image::en@modules:ROOT:aap_user.png[AAP personal username,width=80%]
+
+Each learner has an independent Organization and automation resources. You will only work with the Inventory, Job Template, Workflow, Event Stream, and Rulebook Activation in your own Organization.
+
+== 3. Verify pre-created automation resources
+
+*Phase: Phase 1｜Environment and Resource Verification*
+
+=== Verify Automation Execution Templates
+
+From the left navigation menu, select:
+
+*Automation Execution → Templates*
+
+Verify that you can see at least the following Templates:
+
+[cols="1,1",options="header"]
+|===
+|Template
+|Purpose
+|CVE Radar - AI Risk Analysis
+|Receives EDA events, calls the AI Model, and gathers evidence through RHEL MCP.
+|CVE Radar - Deploy Event Forwarder
+|Deploys or updates the event forwarding service on the target RHEL host.
+|CVE Radar - Deploy Repaired Website
+|Deploys the repaired website code.
+|CVE Radar - Enable Maintenance
+|Temporarily switches the website to the maintenance page.
+|CVE Radar - Governed Web Remediation
+|Executes the governed website remediation Workflow.
+|CVE Radar - Record Suspicious Login Review
+|Records suspicious login events identified by AI.
+|CVE Radar - Reset Lab
+|Restores the environment to the original website before remediation.
+|CVE Radar - Restore Login Page
+|Restores the normal login page after remediation is complete.
+|CVE Radar - Send ntfy Alert
+|Sends real-time alert notifications.
+|CVE Radar - Verify Fixed Site
+|Verifies the repaired version and website access control.
+|===
+
+[IMPORTANT]
+====
+Do not create or duplicate these Templates yourself.
+All Templates are already associated with the predefined Project, Inventory, Credential, and Execution Environment.
+====
+
+== 4. Role and Deployment of Event Forwarder
+
+*Phase: Phase 2｜Event Monitoring and EDA Preparation*
+
+Before deploying Event Forwarder, take a quick look at the event-driven automation flow used in this lab.
+
+Event-Driven Ansible (EDA) is the Ansible Automation Platform component used for event-driven automation. Unlike traditional workflows in which users manually run Playbooks, EDA can continuously receive events from external systems and use a Rulebook to determine whether predefined conditions are met; when a condition matches, it triggers the corresponding AAP Job Template, Workflow, or other automation action.
+
+The overall flow can therefore be understood as follows:
+
+image::en@modules:ROOT:EDA_Flow.png[CVE Radar automated remediation flow,width=90%]
+
+Event-Driven Ansible must first receive an event before it can launch the subsequent AI Analysis according to the Rulebook. In typical enterprise environments, events can be sent to the AAP Event Stream from Prometheus, Splunk, SIEM, monitoring platforms, or existing application event pipelines.
+
+To reduce this lab's dependency on external monitoring platforms, this environment uses a customized Event Forwarder. It continuously monitors Kernel CVE Radar application logs, identifies specified security events, and forwards the event data to the learner's dedicated AAP Event Stream.
+
+In AAP, select:
+
+*Automation Execution → Templates*
+
+Find:
+
+[source,text]
+----
+CVE Radar - Deploy Event Forwarder
+----
+
+Open it and verify the cve_radar_event_stream_url URL under Extra variables. It is recommended to copy it to a text editor for later use.
+
+After verification, click Launch template in the upper-right corner to run it.
+
+image::en@modules:ROOT:forwarder_run.png[Run CVE Radar - Deploy Event Forwarder,width=80%]
+
+This Template uses Ansible to perform the following configuration on the target Edge host:
+
+* Install the Event Forwarder program and configuration files.
+* Apply the configured Event Stream URL and authentication information.
+* Create and start cve-radar-eda-forwarder.service.
+* Start monitoring the security event logs generated by Kernel CVE Radar.
+* Send matching events to the AAP Event Stream.
+Wait for the Job to complete and verify that the status shows Successful. After deployment, Event Forwarder continues running as a background service.
+
+== 5. Verify Event Stream
+
+*Phase: Phase 2｜Event Monitoring and EDA Preparation*
+
+From the left navigation menu, select:
+
+*Automation Decisions → Event Streams*
+
+Open the Event Stream that belongs to your Organization:
+
+[source,text]
+----
+{user} - CVE Radar Event Stream
+----
+
+Verify that its URL field matches the cve_radar_event_stream_url parameter in the CVE Radar - Deploy Event Forwarder Template you just ran.
+
+image::en@modules:ROOT:event_stream_url.png[Verify Event Stream URL,width=80%]
+
+Next, test event reception:
+
+. Switch to the Kernel CVE Radar website.
+. Verify that the upper-right corner shows that you are currently logged in as user1.
+
+image::en@modules:ROOT:cve-radar-header.png[Verify the Kernel CVE Radar login identity,width=80%]
+
+After logging in, click "Admin Info" on the website to open the administrative page.
+
+In the unrepaired version, a regular user can successfully view the administrative page content. This is the Broken Access Control vulnerability intentionally retained for this lab.
+
+Return to the Event Stream page in AAP and verify that the Events received count has increased, indicating that the Event Stream successfully received the event sent by Event Forwarder.
+
+image::en@modules:ROOT:event_stream_count.png[Verify that the Events received count has increased,width=80%]
+
+== 6. Verify Rulebook Activation
+
+*Phase: Phase 2｜Event Monitoring and EDA Preparation*
+
+From the left navigation menu, select:
+
+*Automation Decisions → Rulebook Activations*
+
+Open the CVE Radar Activation that belongs to your Organization:
+
+[source,text]
+----
+{user} - CVE Radar Security Event Activation
+----
+
+Verify that the Activation status is Pending.
+
+image::en@modules:ROOT:rulebook_status.png[Rulebook Activation Pending status,width=80%]
+
+Open it to view the variables settings below.
+
+image::en@modules:ROOT:rulebook_detail.png[Rulebook Activation details,width=80%]
+
+These variables define the Job Template or Workflow corresponding to different event conditions, and the names must match the existing resources. To ensure that the Lab operates correctly, do not modify these settings.
+
+After reviewing the Rulebook "CVE Radar Security Event Activation," enable the Activation switch in the upper-right corner and wait for the status to change to Running.
+
+The Activation will then receive events from the Event Stream and use the Rulebook to determine whether to launch AI Analysis or a subsequent Workflow.
+
+image::en@modules:ROOT:rulebook_running.png[Rulebook Activation Running status,width=80%]
+
+== 7. Create AI Model Credential（Hands-on Configuration 1）
+
+*Phase: Phase 3｜AI Analysis Preparation*
+
+The CVE Radar - AI Risk Analysis Template needs to communicate with the AI Model, so you must create a Credential for the connection. Prepare the AI Model URL and Token obtained in Module 05; either of the two Models provided for this TAM Day Lab can be used.
+
+=== Verify the Model URL and Token from the command line
+
+Return to the terminal on the right side of this guide and enter the following content. Replace <MODEL URL>, <TOKEN>, and <MODEL_NAME> with the actual information obtained in Module 05.
+
+[source,console,role=execute,subs=attributes+]
+----
+export MODEL_URL="<MODEL URL>/v1/chat/completions"
+export AI_API_TOKEN="<TOKEN>"
+export MODEL_NAME="<MODEL_NAME>"
+----
+
+[NOTE]
+====
+MODEL_URL must include /v1/chat/completions.
+Set MODEL_NAME according to the selected Model: qwen3-4b-instruct or qwen3-30b-a3b-instruct-2507-fp8.
+====
+
+Run the following test:
+
+[source,console,role=execute]
+----
+curl -sS \
+  --connect-timeout 5 \
+  --max-time 180 \
+  -X POST "${MODEL_URL}" \
+  -H "Authorization: Bearer ${AI_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"${MODEL_NAME}\",
+    \"messages\": [
+      {
+        \"role\": \"user\",
+        \"content\": \"Reply with exactly: MODEL_OK\"
+      }
+    ],
+    \"temperature\": 0,
+    \"max_tokens\": 20
+  }" | jq .
+----
+
+image::en@modules:ROOT:model_test.png[AI Model test command,width=80%]
+
+The expected response should include:
+
+[source,text]
+----
+"message": {
+  "content": "MODEL_OK"
+}
+----
+
+image::en@modules:ROOT:model_verify.png[AI Model response with MODEL_OK,width=80%]
+
+Seeing MODEL_OK indicates that the Model is responding correctly and that the URL and Token are configured correctly.
+
+=== Create a Credential in AAP
+
+From the left navigation menu, select:
+
+*Automation Execution → Infrastructure → Credentials*
+
+Click Create credential and create the Credential using the following fields:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Recommended value
+|Name
+|AI Model Credentials - <MODEL_NAME>
+|Credential type
+|TAM Day AI Model
+|AI Model URL
+|<MODEL URL>/v1/chat/completions
+|AI Model
+|<MODEL_NAME>
+|AI API Token
+|Paste the Token generated in Module 05
+|===
+
+Click Create credential to finish creating it. If needed, you can create a separate Credential for each of the two Models provided in this TAM Day Lab; later, select the corresponding Credential in the AI Analysis Template.
+
+== 8. Configure the Model and RHEL MCP Endpoint for AI Analysis（Hands-on Configuration 2）
+
+*Phase: Phase 3｜AI Analysis Preparation*
+
+From the left navigation menu, select:
+
+*Automation Execution → Templates*
+
+Open:
+
+[source,text]
+----
+CVE Radar - AI Risk Analysis
+----
+
+Select Edit template, locate Extra variables, and verify or add the following variable:
+
+[source,console,role=execute,subs=attributes+]
+----
+rhel_mcp_url: "http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp"
+----
+
+[NOTE]
+====
+rhel_mcp_url points to the personal RHEL MCP Service that you created in Module 04.
+AI Analysis uses this Endpoint to call approved MCP tools and read Kernel CVE Radar logs on the target RHEL host.
+====
+
+Add the AI Model Credential created in the previous step to the Template's Credential field; the existing Event Stream Sender Credential must be retained.
+
+image::en@modules:ROOT:AI_template.png[Configure the AI Risk Analysis Template,width=80%]
+
+Keep the other existing variables in the Template, [red yellow-background]#do not remove the Timeout or TLS validation settings#, and then select Save template.
+
+== 9. Configure alert notifications（Hands-on Configuration 3）
+
+*Phase: Phase 4｜Governed Remediation Preparation*
+
+From the left navigation menu, select:
+
+*Automation Execution → Templates*
+
+Open:
+
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
+
+This Template sends real-time alerts through ntfy. ntfy is a lightweight notification service that can push messages through a simple API, making it suitable as a temporary notification channel for the Lab. In enterprise environments, it can be replaced with Slack, Microsoft Teams, or other notification tools according to existing standards.
+
+In the Template's Extra variables, ntfy_url is a randomly generated personal notification URL. Copy the URL into a browser to open your personal notification center.
+
+image::en@modules:ROOT:ntfy_init.png[Open the personal ntfy notification center,width=80%]
+
+=== Test sending a message
+
+Run this Template and modify the following values in Extra variables:
+
+[source,console,role=execute,subs=attributes+]
+----
+ntfy_title: "This is a test message"
+ntfy_priority: default
+ntfy_tags: ""
+ntfy_message: "This is test message content"
+----
+
+Note: For the available values of ntfy_priority and ntfy_tags, refer to the ntfy publishing documentation (https://docs.ntfy.sh/publish/).
+
+After running the Template, return to ntfy_url and verify that the message appears.
+
+image::en@modules:ROOT:ntfy_test.png[ntfy alert and remediation-complete notifications,width=80%]
+
+== 10. Build the website remediation and alert workflow（Hands-on Configuration 4）
+
+*Phase: Phase 4｜Governed Remediation Preparation*
+
+From the left navigation menu, select:
+
+*Automation Execution → Templates*
+
+Open:
+
+[source,text]
+----
+CVE Radar - Governed Web Remediation
+----
+
+This Workflow has already been created. When AI Analysis determines that the next action is `repair_web_code`, EDA launches this governed remediation flow. The initial Workflow does not yet contain execution nodes, so you need to complete the configuration.
+
+image::en@modules:ROOT:workflow.png[Governed Web Remediation Workflow before nodes are configured,width=90%]
+
+Click *View workflow visualizer* in the upper-right corner, then select *Add step*. Create all nodes first, and then configure the connections and success conditions together to reduce the chance of connecting the flow incorrectly.
+
+Add the seven nodes in the following order. You can configure the notification content when creating the two ntfy nodes; at this stage, do not configure the connections between nodes yet.
+
+. Job Template：`CVE Radar - Enable Maintenance`
+. Approval: `Approve repaired web deployment` (Timeout: 30 minutes)
+. Job Template: `CVE Radar - Send ntfy Alert` (warning and approval notification)
+
+In the Template variables of node 3, "warning and approval notification," configure:
+
+[source,console,role=execute,subs=attributes+]
+----
+ntfy_title: "Unauthorized Access Alert"
+ntfy_priority: default
+ntfy_tags: "warning,robot"
+ntfy_message: "The site has been switched to the maintenance page. Please go to AAP to approve the subsequent remediation flow."
+----
+
+. Job Template：`CVE Radar - Deploy Repaired Website`
+. Job Template：`CVE Radar - Verify Fixed Site`
+. Job Template：`CVE Radar - Restore Login Page`
+. Job Template: `CVE Radar - Send ntfy Alert` (remediation-complete notification)
+
+In the Template variables of node 7, "remediation-complete notification," configure:
+
+[source,console,role=execute,subs=attributes+]
+----
+ntfy_title: "CVE Radar Remediation Complete"
+ntfy_priority: default
+ntfy_tags: "white_check_mark,robot"
+ntfy_message: "The website remediation flow is complete. Service has been restored and validation passed."
+----
+
+After creating all seven nodes, use the table below to build the flow. The key point is that after the maintenance page is enabled successfully, the alert is sent while the flow waits for manual approval; only after approval succeeds does the flow continue to deployment, validation, recovery, and the completion notification.
+
+[cols="4,2,4",options="header"]
+|===
+|Source node
+|Condition
+|Target node
+
+|Home
+|Run always
+|`CVE Radar - Enable Maintenance`
+
+|`CVE Radar - Enable Maintenance`
+|Run always
+|`Approve repaired web deployment`
+
+|`CVE Radar - Enable Maintenance`
+|Run always
+|`CVE Radar - Send ntfy Alert` (warning and approval notification)
+
+|`Approve repaired web deployment`
+|Run on success
+|`CVE Radar - Deploy Repaired Website`
+
+|`CVE Radar - Deploy Repaired Website`
+|Run on success
+|`CVE Radar - Verify Fixed Site`
+
+|`CVE Radar - Verify Fixed Site`
+|Run on success
+|`CVE Radar - Restore Login Page`
+
+|`CVE Radar - Restore Login Page`
+|Run on success
+|`CVE Radar - Send ntfy Alert` (remediation-complete notification)
+|===
+
+=== How to create workflow connections?
+
+In *View workflow visualizer*, move the pointer over the source node, then drag the arrow that appears on the right side of the node to the target node.
+
+image::en@modules:ROOT:workflow_point.png[Drag the arrow in Workflow Visualizer to create a node connection,width=55%]
+
+=== Configure workflow execution conditions
+
+Click the three small white dots next to the default *Run always* setting on the connection, then select *Run on success*.
+
+image::en@modules:ROOT:workflow_run.png[Set the Workflow connection condition to Run on success,width=55%]
+
+image::en@modules:ROOT:remediation_workflow.png[CVE Radar remediation, approval, and notification Workflow,width=95%]
+
+After verifying that the nodes, connection directions, and Run on success conditions match the flow diagram, select *Save*.
+
+== 11. Enable Event Stream event forwarding
+
+*Phase: Phase 4｜Governed Remediation Preparation*
+
+Next, return to *Automation Decisions → Event Streams*
+
+Enable the switch on the right side of {user} - CVE Radar Event Stream so that the Event Stream starts forwarding subsequent events to the Rulebook Activation.
+
+image::en@modules:ROOT:event_stream_enable.png[Enable Forward events to rulebook activation,width=80%]
+
+The preparation is now complete. You can proceed with the test.
+
+== 12. Generate a security event through the website
+
+*Phase: Phase 5｜Event Analysis and Approval*
+
+You will now use the Kernel CVE Radar website as a regular user.
+
+Open:
+
+[source,console,role=execute,subs=attributes+]
+----
+https://{edge_host}
+----
+
+Verify that you are currently logged in with the following regular user account:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Value
+|Username
+|user1
+|Password
+|User1@tday
+|===
+
+After logging in, click "Admin Info" on the website to open the administrative page.
+
+[IMPORTANT]
+====
+Open the administrative page successfully only once.
+Do not click it repeatedly within a short period to avoid generating multiple identical events.
+====
+
+image::en@modules:ROOT:cve-radar-admin.png[Regular user successfully opens the administrative page,width=80%]
+
+== 13. Observe EDA receiving the event
+
+*Phase: Phase 5｜Event Analysis and Approval*
+
+Return to Ansible Automation Platform.
+
+From the left navigation menu, select:
+
+*Automation Decisions → Rule Audit*
+
+You should see a record showing that the event matched the Broken Access Control rule:
+
+[source,text]
+----
+Detect non-admin access to admin content
+----
+
+Open it, switch to the *Events* tab, and then click:
+
+[source,text]
+----
+{user} - CVE Radar Event Stream
+----
+
+You can then observe the event details.
+
+The event data includes:
+
+* Event type.
+* Username。
+* Source IP.
+* Target host.
+* Access path `/admin`.
+* Event time.
+* Collector Hostname。
+
+EDA does not directly remediate the website. Instead, it passes the event to AI Analysis according to the defined rules.
+
+== 14. Review AI Analysis
+
+*Phase: Phase 5｜Event Analysis and Approval*
+
+From the left navigation menu, select:
+
+*Automation Execution → Jobs*
+
+Open the latest:
+
+[source,text]
+----
+CVE Radar - AI Risk Analysis
+----
+
+AI Analysis performs the following actions:
+
+. Receive the trigger event from EDA.
+. Obtain the target host and log location from the event.
+. Connect to your RHEL MCP Endpoint.
+. Use approved MCP tools to read application logs.
+. Send the event and log evidence to the AI Model.
+. Generate a structured event assessment and remediation recommendation.
+. Send the governed Decision Event back to the Event Stream.
+
+In the Job output, enter `TASK - Show safe investigation summary` in the search field and verify that the analysis result includes content similar to the following:
+
+[source,yaml]
+----
+incident_type: broken_access_control
+recommended_next_step: repair_web_code
+mcp_tools_used:
+  - read_log_file
+----
+
+AI must first obtain sufficient evidence through MCP tools that are on the allowlist before it can generate an executable Decision Event.
+
+AI does not directly log in to hosts to run arbitrary commands, nor does it directly modify the environment.
+
+// TODO: Add the AI evidence summary and repair_web_code decision screenshot
+// image::en@modules:ROOT:aap-ai-analysis-repair-decision.png[AI evidence summary and repair_web_code decision,width=80%]
+
+In `TASK - Show AI decision event hand-off summary`, verify that the final message sent includes:
+
+[source,yaml]
+----
+routed_workflow: governed_web_remediation
+----
+
+After the AI Decision Event is sent back to the Event Stream, EDA evaluates the Rulebook again and launches:
+
+[source,text]
+----
+CVE Radar - Governed Web Remediation
+----
+
+=== Receive the alert notification
+
+Switch to the ntfy notification center. You should see the alert notification configured in the Workflow.
+
+image::en@modules:ROOT:ntfy_warning.png[ntfy unauthorized access alert,width=80%]
+
+== 15. Approve the remediation Workflow
+
+*Phase: Phase 5｜Event Analysis and Approval*
+
+From the left navigation menu, select:
+
+*Automation Execution → Jobs*
+
+Open the latest Workflow Job.
+
+When the notification is sent, the Workflow also switches the website to the maintenance page to prevent the vulnerable administrative function from remaining available during remediation. The Workflow then pauses at the Approval node and waits for manual approval.
+
+From the left navigation menu, select:
+
+*Automation Execution → Administration → Workflow Approvals*
+
+Open the latest `Approve repaired web deployment`
+
+image::en@modules:ROOT:workflow_approval.png[Workflow Approval,width=80%]
+
+After verifying that the information is correct, select *Approve* in the upper-right corner.
+
+[IMPORTANT]
+====
+Manual approval is the governance control point in this lab.
+AI can analyze, plan, and propose remediation recommendations, but before changes are made to the production service, approval from an authorized person is still required.
+====
+
+== 16. Observe the Workflow executing remediation
+
+*Phase: Phase 6｜Remediation and Validation*
+
+After approval, the Workflow executes the governed remediation procedures in sequence:
+
+. Deploys the repaired website code.
+. Validate the repaired version and website access control.
+. Restore the normal login page.
+. Send the remediation-complete notification.
+In Workflow Visualizer, verify that all nodes are complete and that the final status is:
+
+[source,text]
+----
+Successful
+----
+
+If any validation step fails, the Workflow must not treat the failed remediation result as complete.
+
+image::en@modules:ROOT:workflow_success.png[Workflow completed successfully,width=80%]
+
+After the Workflow completes, the ntfy notification center also receives the remediation-complete notification.
+
+image::en@modules:ROOT:ntfy_final.png[ntfy remediation-complete notification,width=80%]
+
+== 17. Validate the remediation result
+
+*Phase: Phase 6｜Remediation and Validation*
+
+Return to the Kernel CVE Radar website:
+
+[source,console,role=execute,subs=attributes+]
+----
+https://{edge_host}
+----
+
+If the browser still retains the previous login Session, log out first.
+
+Log in again as the regular user user1:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Value
+|Username
+|user1
+|Password
+|User1@tday
+|===
+
+Try to open the Admin or administrative page.
+
+The regular user should now see an access denied message and should no longer be able to view administrative content. The bottom of the website home page should also display:
+
+[source,text]
+----
+FIXED VERSION
+----
+
+image::en@modules:ROOT:cve-radar-fix.png[After remediation, the regular user cannot access the administrative page,width=80%]
+
+Next, log out the regular user and log in with the administrator account:
+
+[cols="1,1",options="header"]
+|===
+|Field
+|Value
+|Username
 |admin
-|admin123
+|Password
+|TAMDay@2026
 |===
 
-== Confirm the Broken State
+Verify that the administrator can still open the administrative page normally.
 
-Open your portal route:
+This indicates that the remediation only fixes authorization control and does not break legitimate administrative functionality.
 
-[source,console,role=execute,subs=attributes+]
-----
-https://portal-{user}.{openshift_cluster_ingress_domain}
-----
+image::en@modules:ROOT:cve-radar-admin-success.png[After remediation, the administrator can still access the administrative page,width=80%]
 
-Confirm that the health endpoint is working:
+== What You Accomplished
 
-[source,console,role=execute,subs=attributes+]
-----
-curl -k https://portal-{user}.{openshift_cluster_ingress_domain}/healthz
-----
+Congratulations! You have completed a governed Agentic AI automated remediation flow:
 
-Log in as the ordinary user:
+* Website interaction generates a real application event.
+* Event Forwarder sends the event to the AAP Event Stream.
+* The EDA Rulebook automatically launches AI Analysis.
+* AI gathers remote evidence through RHEL MCP.
+* AI generates a structured and constrained remediation recommendation.
+* Decision Event Trigger AAP Workflow。
+* A human approves the change before the service is modified.
+* The Workflow performs maintenance, deployment, recovery, and validation.
+* AAP Job History retains a complete execution and audit record.
 
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"user123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-----
-
-Access the administrator page:
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -b cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-The initial result is:
-
-[listing]
-----
-HTTP/1.1 200 OK
-----
-
-This is the intentional security defect. The application is alive, but its authorization policy is broken.
-
-// TODO: Add a screenshot showing the ordinary user /admin request returning HTTP/1.1 200 OK before remediation.
-// Suggested filename: portal-broken-admin-access.png
-
-== Investigate with the RHOAI Playground
-
-Open Red Hat OpenShift AI and go to the Gen AI Playground.
-
-Enable these MCP servers:
-
-* Kubernetes MCP Server
-* Rocket.Chat MCP Server
-* AAP MCP Server
-
-Use the following prompt:
-
-[listing,role=execute,subs=attributes+]
-----
-We are investigating a security incident for my lab user {user}.
-The portal application is in namespace tam-{user} and the route is
-https://portal-{user}.{openshift_cluster_ingress_domain}.
-
-Please inspect the portal pod logs, deployment metadata, and recent validation output.
-Explain why an ordinary user can access /admin and propose a minimal secure code fix.
-Do not trigger any deployment yet.
-----
-
-The expected root-cause analysis is:
-
-* `/admin` checks whether the user is logged in.
-* `/admin` does not enforce the `admin` role.
-* Ordinary users should receive HTTP status `403`.
-
-// TODO: Add a screenshot showing the RHOAI Playground root-cause analysis explaining the missing admin role check.
-// Suggested filename: playground-portal-root-cause.png
-
-== Fix the Application with Cline
-
-Open your OpenShift Dev Spaces workspace and the portal application repository.
-
-Use Cline with the RHOAI-hosted model endpoint. Ask Cline:
-
-[listing,role=execute]
-----
-This Flask portal has a broken authorization bug.
-The /admin route currently allows any authenticated user.
-
-Please make the smallest safe code change so:
-- unauthenticated users receive 401
-- ordinary users receive 403
-- admin users receive 200
-- /healthz remains 200
-
-Also update or add tests that prove these behaviors.
-Show me the diff before I commit.
-----
-
-Review the proposed code changes before accepting them.
-
-// TODO: Add a screenshot showing Cline's proposed authorization diff and test changes before accepting them.
-// Suggested filename: cline-portal-auth-diff.png
-
-Run the local tests:
-
-[source,console,role=execute]
-----
-pytest -q
-----
-
-// TODO: Add a screenshot showing pytest passing for the portal authorization tests.
-// Suggested filename: portal-pytest-success.png
-
-Commit your fix:
-
-[source,console,role=execute]
-----
-git status
-git add app.py tests/test_authorization.py
-git commit -m "Fix admin authorization check"
-git push
-----
-
-== Trigger AAP Remediation
-
-Before deployment, confirm that the code diff is acceptable.
-
-Launch the approved AAP job template:
-
-[listing,role=execute]
-----
-tam-day-portal-remediate
-----
-
-Provide the following survey variables:
-
-[source,yaml,role=execute,subs=attributes+]
-----
-username: "{user}"
-namespace: "tam-{user}"
-app_name: "portal-{user}"
-route_url: "https://portal-{user}.{openshift_cluster_ingress_domain}"
-image: "quay.io/YOUR_ORG/tam-day-portal:fixed"
-notify_channel: "#rh-tam-alerts"
-----
-
-The AAP job will:
-
-* Patch your portal Deployment
-* Wait for the rollout to complete
-* Run security validation
-* Report the result
-
-// TODO: Add a screenshot showing the AAP job template survey filled with username, namespace, app_name, route_url, image, and notify_channel.
-// Suggested filename: aap-portal-remediation-survey.png
-
-// TODO: Add a screenshot showing the AAP remediation job completed successfully with validation output.
-// Suggested filename: aap-portal-remediation-success.png
-
-== Validate the Fixed State
-
-Ordinary user access to `/admin` must now fail:
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"user123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-
-curl -k -b cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-Expected result:
-
-[listing]
-----
-HTTP/1.1 403 FORBIDDEN
-----
-
-// TODO: Add a screenshot showing ordinary user access to /admin returning HTTP/1.1 403 FORBIDDEN after remediation.
-// Suggested filename: portal-fixed-user-forbidden.png
-
-Administrator access must still work:
-
-[source,console,role=execute,subs=attributes+]
-----
-curl -k -c admin-cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/login
-
-curl -k -b admin-cookies.txt -i \
-  https://portal-{user}.{openshift_cluster_ingress_domain}/admin
-----
-
-Expected result:
-
-[listing]
-----
-HTTP/1.1 200 OK
-----
-
-// TODO: Add a screenshot showing administrator access to /admin returning HTTP/1.1 200 OK after remediation.
-// Suggested filename: portal-fixed-admin-ok.png
-
-== Governance Discussion
-
-This lab intentionally keeps control boundaries clear:
-
-* RHOAI and MCP assist with investigation.
-* Cline proposes and applies source changes in the developer workspace.
-* Git records the code change.
-* AAP performs deployment and validation.
-* Human approval is required before remediation.
-* AAP job history and chat notifications provide audit context.
-
-The same pattern can be extended to RHEL VM targets by replacing the per-user OpenShift workload with AAP inventory, credentials, and host-level deployment tasks.
-////
+This architecture constrains AI analysis and planning capabilities within an enterprise automation flow that is controllable, approvable, and traceable.

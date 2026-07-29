@@ -5,6 +5,6 @@
 * xref:module-05-code.adoc#code-asst[Module 5: Build an AI-Assisted Development Environment]
 * xref:module-06-tryit.adoc#code[Module 6: Try It Yourself]
 * xref:module-07-analysis.adoc#analysis-logs[Module 7: Analyze the Edge Application Logs]
-* xref:module-08-remediate.adoc#remediation-and-redeploy[Module 8: Challenge / Bonus: Remediate and Redeploy]
+* xref:module-08-remediate.adoc#remediation-and-redeploy[Module 8: Implementing Event-Driven Governed Remediation with Agentic AI]
 * xref:module-09-closing.adoc#closing-summary[Closing Summary]
 * xref:module-10-resources.adoc#resources[Resources]
