@@ -502,9 +502,9 @@ image::en@modules:ROOT:workflow.png[尚未設定節點的 Governed Web Remediati
 . Job Template：`CVE Radar - Enable Maintenance`
 . Approval：`Approve repaired web deployment`（Timeout：30 分鐘）
 . Job Template：`CVE Radar - Send ntfy Alert`（警告與核准通知）
-
++
 在第 3 個「警告與核准通知」節點的 Template variables 中設定：
-
++
 [source,console,role=execute,subs=attributes+]
 ----
 ntfy_title: "權限異常使用通知"
@@ -517,9 +517,9 @@ ntfy_message: "已切換至維護頁，請至 AAP 核准後續修復流程。"
 . Job Template：`CVE Radar - Verify Fixed Site`
 . Job Template：`CVE Radar - Restore Login Page`
 . Job Template：`CVE Radar - Send ntfy Alert`（修復完成通知）
-
++
 在第 7 個「修復完成通知」節點的 Template variables 中設定：
-
++
 [source,console,role=execute,subs=attributes+]
 ----
 ntfy_title: "CVE Radar 修復完成"
