@@ -691,7 +691,7 @@ AI Analysis 將執行以下動作：
 . 產生結構化的事件判斷與修復建議。
 . 將受控的 Decision Event 傳回 Event Stream。
 
-在 Job 輸出中，於搜尋欄位輸入 `TASK - Show safe investigation summary`，確認分析結果包含類似以下內容：
+在 Job 輸出中，於搜尋欄位輸入 `TASK - Show safe investigation summary`，點選輸出檢視細節，確認分析結果包含類似以下內容：
 
 [source,yaml]
 ----
@@ -700,6 +700,8 @@ recommended_next_step: repair_web_code
 mcp_tools_used:
   - read_log_file
 ----
+
+image::en@modules:ROOT:template_out.png[AI Analysis輸出結果,width=80%]
 
 AI 必須先透過符合允許清單的 MCP 工具取得足夠證據，才能產生可執行的 Decision Event。
 
