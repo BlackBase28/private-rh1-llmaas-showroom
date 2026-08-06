@@ -364,7 +364,7 @@ curl -i -X POST "$MCP_URL" \
 
 ----
 
-請求預期會返回 `HTTP/1.1 200 OK `，並附帶需要 `content-type: text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
+請求預期會返回 `HTTP/1.1 200 OK ` ，並附帶需要 `content-type: text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
 
 == 測試 MCP 工具
 
