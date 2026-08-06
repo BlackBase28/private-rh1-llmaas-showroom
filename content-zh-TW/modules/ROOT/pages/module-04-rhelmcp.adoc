@@ -102,17 +102,15 @@ sudo chmod 600 "${LAB_HOME}/.ssh/authorized_keys"
 
 sudo restorecon -RF "${LAB_HOME}/.ssh"
 
-ls -ldZ \
-  "${LAB_HOME}/.ssh" \
-  "${LAB_HOME}/.ssh/authorized_keys"
+stat -c "%U %a %n" "${LAB_HOME}/.ssh" "${LAB_HOME}/.ssh/authorized_keys"
 ----
 
 確認擁有者為 `lab-user`，權限分別為：
 
 [source,text]
 ----
-.ssh                 700
-authorized_keys      600
+lab-user 700 /home/lab-user/.ssh
+lab-user 600 /home/lab-user/.ssh/authorized_keys
 ----
 
 == 在 Showroom 終端機產生 MCP SSH 金鑰
