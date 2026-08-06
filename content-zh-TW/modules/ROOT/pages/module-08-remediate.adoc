@@ -495,15 +495,63 @@ CVE Radar - Governed Web Remediation
 
 image::en@modules:ROOT:workflow.png[尚未設定節點的 Governed Web Remediation Workflow,width=90%]
 
-點選右上方的 *View workflow visualizer*，再選擇 *Add step*。接下來先建立所有節點，再統一設定連線與成功條件，較不容易接錯流程。
+點選右上方的 *View workflow visualizer*，再選擇 *Add step* 開始建立流程的第一個節點。
 
-先依照以下順序加入 7 個節點。兩個 ntfy 節點可在建立時一併設定通知內容；此階段先不用處理節點間的連線。
+後續新增節點時，請點選來源節點下方名稱旁的三個小白點開啟選單，再選擇 *Add step and link*。此操作會新增下一個節點，並同時建立與來源節點之間的連線。
 
-. Job Template：`CVE Radar - Enable Maintenance`
-. Approval：`Approve repaired web deployment`（Timeout：30 分鐘）
-. Job Template：`CVE Radar - Send ntfy Alert`（警告與核准通知）
+image::en@modules:ROOT:workflow_process.png[使用 Add step and link 新增下一個節點並建立連線,width=70%]
+
+接下來請依照實際執行順序，逐步建立以下 7 個節點。
+
+. 建立維護頁面節點
 +
-在第 3 個「警告與核准通知」節點的 Template variables 中設定：
+選擇 *Add step*，加入以下 Job Template：
++
+[source,text]
+----
+CVE Radar - Enable Maintenance
+----
++
+此節點會自動連接至 Home。保留連線條件為 *Run always*。
++
+Workflow 啟動後，會先將網站切換至維護頁面，避免修復期間繼續提供有弱點的管理功能。
+
+. 建立人工核准節點
++
+點選 `CVE Radar - Enable Maintenance` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入 Approval 節點，並設定：
++
+[cols="1,2",options="header"]
+|===
+|欄位
+|設定值
+
+|Name
+|Approve repaired web deployment
+
+|Timeout
+|30 分鐘
+|===
++
+保留 `CVE Radar - Enable Maintenance` 至 Approval 節點的連線條件為 *Run always*。
++
+Workflow 執行至此時會暫停，等待具備權限的人員核准後續修復。
+
+. 建立警告與核准通知節點
++
+再次點選 `CVE Radar - Enable Maintenance` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入以下 Job Template，建立與 Approval 平行執行的通知分支：
++
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
++
+保留連線條件為 *Run always*。
++
+在此節點的 Template variables 中設定：
 +
 [source,console,role=execute,subs=attributes+]
 ----
@@ -512,13 +560,71 @@ ntfy_priority: default
 ntfy_tags: "warning,robot"
 ntfy_message: "已切換至維護頁，請至 AAP 核准後續修復流程。"
 ----
-
-. Job Template：`CVE Radar - Deploy Repaired Website`
-. Job Template：`CVE Radar - Verify Fixed Site`
-. Job Template：`CVE Radar - Restore Login Page`
-. Job Template：`CVE Radar - Send ntfy Alert`（修復完成通知）
 +
-在第 7 個「修復完成通知」節點的 Template variables 中設定：
+完成後，`CVE Radar - Enable Maintenance` 應同時連接至以下兩個節點：
++
+* `Approve repaired web deployment`
+* `CVE Radar - Send ntfy Alert`（警告與核准通知）
+
+. 建立修復版本部署節點
++
+點選 `Approve repaired web deployment` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入以下 Job Template：
++
+[source,text]
+----
+CVE Radar - Deploy Repaired Website
+----
++
+此步驟只有在人工核准成功後才能執行，因此請點選新建立連線旁的三個小白點，將條件由預設的 *Run always* 改為 *Run on success*。
++
+image::en@modules:ROOT:workflow_run.png[將 Workflow 連線條件設定為 Run on success,width=55%]
+
+. 建立修復結果驗證節點
++
+點選 `CVE Radar - Deploy Repaired Website` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入以下 Job Template：
++
+[source,text]
+----
+CVE Radar - Verify Fixed Site
+----
++
+將連線條件設定為 *Run on success*。
++
+只有修復版本部署成功後，Workflow 才會繼續驗證網站版本與存取控制。
+
+. 建立登入頁面恢復節點
++
+點選 `CVE Radar - Verify Fixed Site` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入以下 Job Template：
++
+[source,text]
+----
+CVE Radar - Restore Login Page
+----
++
+將連線條件設定為 *Run on success*。
++
+只有網站驗證成功後，Workflow 才會恢復正常登入頁面。
+
+. 建立修復完成通知節點
++
+點選 `CVE Radar - Restore Login Page` 節點下方名稱旁的三個小白點，選擇 *Add step and link*。
++
+加入以下 Job Template：
++
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
++
+將連線條件設定為 *Run on success*。
++
+在此節點的 Template variables 中設定：
 +
 [source,console,role=execute,subs=attributes+]
 ----
@@ -528,58 +634,19 @@ ntfy_tags: "white_check_mark,robot"
 ntfy_message: "網站修復流程已完成，服務已恢復並通過驗證。"
 ----
 
-7 個節點建立完成後，請參考下表建立流程。流程重點是：維護頁啟用成功後，同時送出告警並等待人工核准；只有核准成功，才會進入部署、驗證、恢復與完成通知。
-
-[cols="4,2,4",options="header"]
-|===
-|來源節點
-|條件
-|目標節點
-
-|Home
-|Run always
-|`CVE Radar - Enable Maintenance`
-
-|`CVE Radar - Enable Maintenance`
-|Run always
-|`Approve repaired web deployment`
-
-|`CVE Radar - Enable Maintenance`
-|Run always
-|`CVE Radar - Send ntfy Alert`（警告與核准通知）
-
-|`Approve repaired web deployment`
-|Run on success
-|`CVE Radar - Deploy Repaired Website`
-
-|`CVE Radar - Deploy Repaired Website`
-|Run on success
-|`CVE Radar - Verify Fixed Site`
-
-|`CVE Radar - Verify Fixed Site`
-|Run on success
-|`CVE Radar - Restore Login Page`
-
-|`CVE Radar - Restore Login Page`
-|Run on success
-|`CVE Radar - Send ntfy Alert`（修復完成通知）
-|===
-
-=== 如何建立流程連線？
-
-在 *View workflow visualizer* 中，將滑鼠移到來源節點，從節點右側出現的箭頭拖曳至目標節點。
-
-image::en@modules:ROOT:workflow_point.png[在 Workflow Visualizer 中拖曳箭頭建立節點連線,width=55%]
-
-=== 設定流程運作條件
-
-點選連線旁預設 *Run always* 的三個小白點，選擇 *Run on success*。
-
-image::en@modules:ROOT:workflow_run.png[將 Workflow 連線條件設定為 Run on success,width=55%]
+完成後，Workflow 的主要執行流程如下圖所示：
 
 image::en@modules:ROOT:remediation_workflow.png[CVE Radar 修復、核准與通知 Workflow,width=95%]
 
-確認節點、連線方向與 Run on success 條件皆與流程圖一致後，選擇 *Save*。
+確認 Workflow 符合以下條件：
+
+* Home 連接至 `CVE Radar - Enable Maintenance`。
+* `CVE Radar - Enable Maintenance` 同時連接至 Approval 與警告通知節點。
+* Approval 成功後才會執行 `CVE Radar - Deploy Repaired Website`。
+* 部署、驗證、恢復登入頁面與修復完成通知均使用 *Run on success*。
+* 兩個 `CVE Radar - Send ntfy Alert` 節點使用不同的通知內容。
+
+確認節點、連線方向與執行條件皆與流程圖一致後，選擇 *Save*。
 
 == 11. 開啟 Event Stream 事件轉送功能
 
