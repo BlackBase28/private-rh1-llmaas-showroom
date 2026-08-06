@@ -188,7 +188,7 @@ oc create secret generic rhel-mcp-ssh-key \
 
 == 建立 MCP 政策
 
-此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs`和`get_service_status`。
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs` 和 `get_service_status`。
 
 [source,console,role=execute]
 ----
@@ -351,11 +351,20 @@ http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp
 
 [source,console,role=execute]
 ----
-curl -i \
-  "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+MCP_URL="http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+
+curl -i -X POST "$MCP_URL" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize"
+  }'
+
 ----
 
-一般 HTTP GET 請求通常會返回 `406 Not Acceptable`，並附帶需要 `text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
+請求預期會返回 `HTTP/1.1 200 OK `，並附帶需要 `content-type: text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
 
 == 測試 MCP 工具
 
