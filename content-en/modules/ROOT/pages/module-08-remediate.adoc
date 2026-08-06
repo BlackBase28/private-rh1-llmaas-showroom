@@ -657,7 +657,7 @@ You can then observe the event details.
 The event data includes:
 
 * Event type.
-* Username。
+* Username.
 * Source IP.
 * Target host.
 * Access path `/admin`.
@@ -691,7 +691,7 @@ AI Analysis performs the following actions:
 . Generate a structured event assessment and remediation recommendation.
 . Send the governed Decision Event back to the Event Stream.
 
-In the Job output, enter `TASK - Show safe investigation summary` in the search field and verify that the analysis result includes content similar to the following:
+In the Job output, enter `TASK - Show safe investigation summary` in the search field, click the output to view the details, and verify that the analysis result includes content similar to the following:
 
 [source,yaml]
 ----
@@ -700,6 +700,8 @@ recommended_next_step: repair_web_code
 mcp_tools_used:
   - read_log_file
 ----
+
+image::en@modules:ROOT:template_out.png[AI Analysis output results,width=80%]
 
 AI must first obtain sufficient evidence through MCP tools that are on the allowlist before it can generate an executable Decision Event.
 
@@ -844,7 +846,7 @@ Congratulations! You have completed a governed Agentic AI automated remediation 
 * The EDA Rulebook automatically launches AI Analysis.
 * AI gathers remote evidence through RHEL MCP.
 * AI generates a structured and constrained remediation recommendation.
-* Decision Event Trigger AAP Workflow。
+* Decision Event triggers AAP Workflow.
 * A human approves the change before the service is modified.
 * The Workflow performs maintenance, deployment, recovery, and validation.
 * AAP Job History retains a complete execution and audit record.

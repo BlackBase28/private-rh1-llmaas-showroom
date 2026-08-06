@@ -102,17 +102,15 @@ sudo chmod 600 "${LAB_HOME}/.ssh/authorized_keys"
 
 sudo restorecon -RF "${LAB_HOME}/.ssh"
 
-ls -ldZ \
-  "${LAB_HOME}/.ssh" \
-  "${LAB_HOME}/.ssh/authorized_keys"
+stat -c "%U %a %n" "${LAB_HOME}/.ssh" "${LAB_HOME}/.ssh/authorized_keys"
 ----
 
 確認擁有者為 `lab-user`，權限分別為：
 
 [source,text]
 ----
-.ssh                 700
-authorized_keys      600
+lab-user 700 /home/lab-user/.ssh
+lab-user 600 /home/lab-user/.ssh/authorized_keys
 ----
 
 == 在 Showroom 終端機產生 MCP SSH 金鑰
@@ -190,7 +188,7 @@ oc create secret generic rhel-mcp-ssh-key \
 
 == 建立 MCP 政策
 
-此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs`和`get_service_status`。
+此政策僅允許對您分配的 Edge 主機呼叫 `read_log_file`、`get_journal_logs` 和 `get_service_status`。
 
 [source,console,role=execute]
 ----
@@ -353,11 +351,22 @@ http://rhel-mcp.showroom-{guid}-{user}.svc.cluster.local:8000/mcp
 
 [source,console,role=execute]
 ----
-curl -i \
-  "http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+MCP_URL="http://rhel-mcp.${MCP_NAMESPACE}.svc.cluster.local:8000/mcp"
+
+curl -i -X POST "$MCP_URL" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize"
+  }'
+
 ----
 
-一般 HTTP GET 請求通常會返回 `406 Not Acceptable`，並附帶需要 `text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
+請求預期會返回 `HTTP/1.1 200 OK` ，並附帶需要 `content-type: text/event-stream` 的訊息。這確認了 DNS 和 Service 可以正常連線；curl 此處並未執行 MCP 協定交握。
+
+image::en@modules:ROOT:rhel-mcp-verify.png[RHEL MCP response results for the verify,width=90%]
 
 == 測試 MCP 工具
 
