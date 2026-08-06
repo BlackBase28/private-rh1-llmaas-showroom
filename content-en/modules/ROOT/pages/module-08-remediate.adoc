@@ -495,15 +495,63 @@ This Workflow has already been created. When AI Analysis determines that the nex
 
 image::en@modules:ROOT:workflow.png[Governed Web Remediation Workflow before nodes are configured,width=90%]
 
-Click *View workflow visualizer* in the upper-right corner, then select *Add step*. Create all nodes first, and then configure the connections and success conditions together to reduce the chance of connecting the flow incorrectly.
+Select *View workflow visualizer* in the upper-right corner, and then select *Add step* to create the first node in the workflow.
 
-Add the seven nodes in the following order. You can configure the notification content when creating the two ntfy nodes; at this stage, do not configure the connections between nodes yet.
+When adding subsequent nodes, select the three white dots next to the name below the source node to open the menu, and then select *Add step and link*. This adds the next node and creates a link from the source node at the same time.
 
-. Job Template：`CVE Radar - Enable Maintenance`
-. Approval: `Approve repaired web deployment` (Timeout: 30 minutes)
-. Job Template: `CVE Radar - Send ntfy Alert` (warning and approval notification)
+image::en@modules:ROOT:workflow_process.png[Use Add step and link to add the next node and create the link,width=70%]
+
+Next, create the following seven nodes step by step in the actual execution order.
+
+. Create the maintenance page node
 +
-In the Template variables of node 3, "warning and approval notification," configure:
+Select *Add step* and add the following Job Template:
++
+[source,text]
+----
+CVE Radar - Enable Maintenance
+----
++
+This node is automatically linked to Home. Keep the link condition set to *Run always*.
++
+When the Workflow starts, it first switches the website to the maintenance page so that the vulnerable administration function is not available during remediation.
+
+. Create the manual approval node
++
+Select the three white dots next to the name below the `CVE Radar - Enable Maintenance` node, and then select *Add step and link*.
++
+Add an Approval node and configure the following settings:
++
+[cols="1,2",options="header"]
+|===
+|Field
+|Value
+
+|Name
+|Approve repaired web deployment
+
+|Timeout
+|30 minutes
+|===
++
+Keep the link condition from `CVE Radar - Enable Maintenance` to the Approval node set to *Run always*.
++
+The Workflow pauses at this point and waits for an authorized user to approve the subsequent remediation.
+
+. Create the warning and approval notification node
++
+Select the three white dots next to the name below the `CVE Radar - Enable Maintenance` node again, and then select *Add step and link*.
++
+Add the following Job Template to create a notification branch that runs in parallel with the Approval node:
++
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
++
+Keep the link condition set to *Run always*.
++
+Configure the Template variables for this node as follows:
 +
 [source,console,role=execute,subs=attributes+]
 ----
@@ -512,13 +560,71 @@ ntfy_priority: default
 ntfy_tags: "warning,robot"
 ntfy_message: "The site has been switched to the maintenance page. Please go to AAP to approve the subsequent remediation flow."
 ----
-
-. Job Template：`CVE Radar - Deploy Repaired Website`
-. Job Template：`CVE Radar - Verify Fixed Site`
-. Job Template：`CVE Radar - Restore Login Page`
-. Job Template: `CVE Radar - Send ntfy Alert` (remediation-complete notification)
 +
-In the Template variables of node 7, "remediation-complete notification," configure:
+When complete, `CVE Radar - Enable Maintenance` should connect to both of the following nodes:
++
+* `Approve repaired web deployment`
+* `CVE Radar - Send ntfy Alert` (warning and approval notification)
+
+. Create the repaired website deployment node
++
+Select the three white dots next to the name below the `Approve repaired web deployment` node, and then select *Add step and link*.
++
+Add the following Job Template:
++
+[source,text]
+----
+CVE Radar - Deploy Repaired Website
+----
++
+This step must run only after manual approval succeeds. Select the three white dots next to the newly created link, and change the condition from the default *Run always* to *Run on success*.
++
+image::en@modules:ROOT:workflow_run.png[Set the Workflow connection condition to Run on success,width=55%]
+
+. Create the remediation result verification node
++
+Select the three white dots next to the name below the `CVE Radar - Deploy Repaired Website` node, and then select *Add step and link*.
++
+Add the following Job Template:
++
+[source,text]
+----
+CVE Radar - Verify Fixed Site
+----
++
+Set the link condition to *Run on success*.
++
+The Workflow verifies the website version and access controls only after the repaired version has been deployed successfully.
+
+. Create the login page restoration node
++
+Select the three white dots next to the name below the `CVE Radar - Verify Fixed Site` node, and then select *Add step and link*.
++
+Add the following Job Template:
++
+[source,text]
+----
+CVE Radar - Restore Login Page
+----
++
+Set the link condition to *Run on success*.
++
+The Workflow restores the normal login page only after the website verification succeeds.
+
+. Create the remediation completion notification node
++
+Select the three white dots next to the name below the `CVE Radar - Restore Login Page` node, and then select *Add step and link*.
++
+Add the following Job Template:
++
+[source,text]
+----
+CVE Radar - Send ntfy Alert
+----
++
+Set the link condition to *Run on success*.
++
+Configure the Template variables for this node as follows:
 +
 [source,console,role=execute,subs=attributes+]
 ----
@@ -528,58 +634,19 @@ ntfy_tags: "white_check_mark,robot"
 ntfy_message: "The website remediation flow is complete. Service has been restored and validation passed."
 ----
 
-After creating all seven nodes, use the table below to build the flow. The key point is that after the maintenance page is enabled successfully, the alert is sent while the flow waits for manual approval; only after approval succeeds does the flow continue to deployment, validation, recovery, and the completion notification.
-
-[cols="4,2,4",options="header"]
-|===
-|Source node
-|Condition
-|Target node
-
-|Home
-|Run always
-|`CVE Radar - Enable Maintenance`
-
-|`CVE Radar - Enable Maintenance`
-|Run always
-|`Approve repaired web deployment`
-
-|`CVE Radar - Enable Maintenance`
-|Run always
-|`CVE Radar - Send ntfy Alert` (warning and approval notification)
-
-|`Approve repaired web deployment`
-|Run on success
-|`CVE Radar - Deploy Repaired Website`
-
-|`CVE Radar - Deploy Repaired Website`
-|Run on success
-|`CVE Radar - Verify Fixed Site`
-
-|`CVE Radar - Verify Fixed Site`
-|Run on success
-|`CVE Radar - Restore Login Page`
-
-|`CVE Radar - Restore Login Page`
-|Run on success
-|`CVE Radar - Send ntfy Alert` (remediation-complete notification)
-|===
-
-=== How to create workflow connections?
-
-In *View workflow visualizer*, move the pointer over the source node, then drag the arrow that appears on the right side of the node to the target node.
-
-image::en@modules:ROOT:workflow_point.png[Drag the arrow in Workflow Visualizer to create a node connection,width=55%]
-
-=== Configure workflow execution conditions
-
-Click the three small white dots next to the default *Run always* setting on the connection, then select *Run on success*.
-
-image::en@modules:ROOT:workflow_run.png[Set the Workflow connection condition to Run on success,width=55%]
+When complete, the main Workflow execution flow should appear as shown below:
 
 image::en@modules:ROOT:remediation_workflow.png[CVE Radar remediation, approval, and notification Workflow,width=95%]
 
-After verifying that the nodes, connection directions, and Run on success conditions match the flow diagram, select *Save*.
+Verify that the Workflow meets the following conditions:
+
+* Home is connected to `CVE Radar - Enable Maintenance`.
+* `CVE Radar - Enable Maintenance` is connected to both the Approval node and the warning notification node.
+* `CVE Radar - Deploy Repaired Website` runs only after the Approval succeeds.
+* Deployment, verification, login page restoration, and the remediation completion notification all use *Run on success*.
+* The two `CVE Radar - Send ntfy Alert` nodes use different notification content.
+
+After confirming that the nodes, link directions, and execution conditions match the workflow diagram, select *Save*.
 
 == 11. Enable Event Stream event forwarding
 
