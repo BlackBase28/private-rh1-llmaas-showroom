@@ -499,7 +499,7 @@ image::en@modules:ROOT:workflow.png[尚未設定節點的 Governed Web Remediati
 
 後續新增節點時，請點選來源節點下方名稱旁的三個小白點開啟選單，再選擇 *Add step and link*。此操作會新增下一個節點，並同時建立與來源節點之間的連線。
 
-image::en@modules:ROOT:workflow_process.png[使用 Add step and link 新增下一個節點並建立連線,width=55%]
+image::en@modules:ROOT:workflow_process.png[使用 Add step and link 新增下一個節點並建立連線,width=70%]
 
 接下來請依照實際執行順序，逐步建立以下 7 個節點。
 
